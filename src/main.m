@@ -51,15 +51,15 @@ function main(RunArg)
 	Stm = load_statement();
 
 	% 1. Minimum torque and angular momentum required.
-	requirements(opts);
+	% requirements(opts);
 
 	% 2. State-space model.
-	ss_model();
+	% ss_model();
 
 	%% Save generated data
 
 	if contains(RunArg.opts, 's')
-		save(fullfile(resDirectory, "runArguments.mat"), "-struct", "RunArg");
-		save(fullfile(resDirectory, "statement.mat"),    "-struct", "Stm");
+		% save(fullfile(resDirectory, "runArguments.mat"), "-struct", "RunArg");
+		% save(fullfile(resDirectory, "statement.mat"),    "-struct", "Stm");
 	end
 end
