@@ -4,17 +4,28 @@ function Stm = load_statement
 % This function returns a structure that contains the data provided by
 % the statement, which are used throughout the project.
 
-% Plane.
-Stm.Plane.Ixx = 6e3;   % Moment of inertia about the x-axis [kg*m²].
-Stm.Plane.Iyy = 50e3;  % Moment of inertia about the y-axis [kg*m²].
-Stm.Plane.Izz = 50e3;  % Moment of inertia about the z-axis [kg*m²].
-Stm.Plane.DIM = [13.4, 11.76, 2.4]; % Dimensions [m].
+% TODO: add performance requirements
 
-% Reaction wheels.
-Stm.BETA       = 63.4;         % Elevation angle of the pyramid [°].
-Stm.DTHETA_MAX = 7e3 * pi/30;  % Maximum angular speed [rad/s].
-Stm.R_E        = 50;           % Internal resistance of the motor [ohm].
-Stm.C_T        = 1;            % Torque constant of the motor [Nm/A].
-Stm.ZETA       = 1e-4;         % Damping factor of the bearings and lubricant [Nm/(rad*s)].
+% Millennium Falcon
+Stm.Falcon.diameter = 20;     % Diameter [m]
+Stm.Falcon.height   = 8;      % Height [m]
+Stm.Falcon.mass     = 100e3;  % Mass (without control system) [kg]
+
+% Requirement on the control system
+Stm.Ctrl.massMax    = 10e3;   % Max. mass [kg]
+Stm.Ctrl.powerMax   = 1e6;    % Max. input power [W]
+Stm.Ctrl.voltageMax = 100e3;  % Max. applied voltage [V]
+
+% Reaction wheels
+Stm.RW.beta     = deg2rad(63.4);  % Elevation angle of the pyramid [rad]
+Stm.RW.speedMax = 7000 * pi/30;   % Max. angular speed [rad/s]
+Stm.RW.elecR    = 50;             % Electrical resistance [ohm]
+Stm.RW.torqueCst = 1;             % Motor torque constant [N*m/A]
+Stm.RW.damping   = 1e-4;          % Damping factor [N*m*s]
+Stm.RW.density   = 8e3;           % Density of steel composing the wheels [kg/m³]
+
+% Thrusters
+Stm.Thruster.thrust = 1e3;  % Thrust [N]
+% TODO: add more if we ineed use thrusters.
 
 end
