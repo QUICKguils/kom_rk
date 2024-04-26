@@ -2,11 +2,11 @@ function main(RunArg)
 	% MAIN  Trigger all the code of the project.
 	%
 	% Argument:
-	%   opts (1xN char)   -- Output options.
+	%   opts (1xN char) -- Output options.
 	%     'p' -> Enable [P]lots creation.
 	%     's' -> [S]ave generated data.
 	%
-	% The default values unsed to run this function
+	% The default values used to run this function
 	% are stored in util/load_defaults.m
 
 	%% Set program initial state
@@ -50,8 +50,8 @@ function main(RunArg)
 	% 0. Load the project statement data.
 	Stm = load_statement();
 
-	% 1. Minimum torque and angular momentum required.
-	% requirements(opts);
+	% 1. Performance requirements.
+	requirements(RunArg, Stm);
 
 	% 2. State-space model.
 	% ss_model();
@@ -59,7 +59,7 @@ function main(RunArg)
 	%% Save generated data
 
 	if contains(RunArg.opts, 's')
-		% save(fullfile(resDirectory, "runArguments.mat"), "-struct", "RunArg");
-		% save(fullfile(resDirectory, "statement.mat"),    "-struct", "Stm");
+		save(fullfile(resDirectory, "runArguments.mat"), "-struct", "RunArg");
+		save(fullfile(resDirectory, "statement.mat"),    "-struct", "Stm");
 	end
 end
