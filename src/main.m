@@ -11,27 +11,27 @@ function main(RunArg)
 
 	%% Set program initial state
 
-	% Close previous plots.
+	% Close previous plots
 	close all;
 
-	% Find the root directory of the project.
+	% Find the root directory of the project
 	rootDirectory = fullfile(fileparts(mfilename('fullpath')), "..");
 
-	% Create the untracked results directory, if absent.
+	% Create the untracked results directory, if absent
 	resDirectory = fullfile(rootDirectory, "/res");
 	if ~isfolder(resDirectory)
 		mkdir(resDirectory);
 	end
 
-	% Add resursively sub-directories in the Matlab path.
+	% Add resursively sub-directories in the Matlab path
 	addpath(genpath(fullfile(rootDirectory, "src")));
 
 	%% Options setting
 
-	% Fetch the defaults execution parameters.
+	% Fetch the defaults execution parameters
 	Default = load_defaults();
 
-	% Overwrite these defaults with user input.
+	% Overwrite these defaults with user input
 	switch nargin
 	case 0
 		RunArg = Default;
@@ -47,13 +47,13 @@ function main(RunArg)
 
 	%% Execute the code
 
-	% 0. Load the project statement data.
+	% 0. Load the project statement data
 	Stm = load_statement();
 
-	% 1. Performance requirements.
+	% 1. Performance requirements
 	requirements(RunArg, Stm);
 
-	% 2. State-space model.
+	% 2. State-space model
 	% ss_model();
 
 	%% Save generated data

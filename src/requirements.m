@@ -1,57 +1,124 @@
-function requirements(RunArg, Stm)
+function varargout = requirements(RunArg, Stm)
 % REQUIREMENTS  Perfomances required for the attitude control system.
 %
 % Arguments:
-%   Stm    (struct) -- Project statement data.
+%   Stm    (struct) -- Project statement data
 %   RunArg (struct) -- Code execution parameters, with fields:
-%     opts  (1xN char) -- Output options.
-%       'p' -> Enable [P]lots creation.
+%     opts  (1xN char) -- Output options
+%       'p' -> Enable [P]lots creation
 
-% Unpack relevant execution parameters.
+% Unpack relevant execution parameters
 LocalRunArg = {RunArg.opts};
 opts = LocalRunArg{:};
 
-% TODO: make 100% sure of these formulae
-I_xx = 0.5 * Stm.Falcon.mass * Stm.Falcon.diameter^2 / 4;
-I_yy = I_xx;
-I_zz = 2 * I_xx;
+% 1. Get the inertias of the spacecraft
 
-% See calculus details in the report
-M_x = pi/50 * I_xx;
+I = compute_inertia(Stm.Falcon);
 
-theta_dot_pre = @(t) M_x/I_xx .* t;
-theta_dot_post = @(t) M_x/I_xx .* (10 - t);
+% 2. Time evolution of the angles, angular momentums and torques.
 
-theta_pre  = @(t) 0.5 * M_x/I_xx * t.^2;
-theta_post = @(t) pi/2 - 0.5 * M_x/I_xx * (10-t).^2;
+Reqr.Roll  = rotation_requirements(Stm.Perf.Roll, I.xx);
+Reqr.Pitch = rotation_requirements(Stm.Perf.Pitch, I.yy);
+% Reqr.Yaw   = rotation_requirements(Stm.Perf.Yaw, I.zz);
 
-t_pre = 0:0.2:5;
-t_post = 5:0.2:10;
+% 3. Requirements plot
 
+if contains(opts, 'p')
+	plot_requirements(Reqr);
+end
+
+% 4. Electrical current and voltage estimation
+
+% 5. Return the relevant calculated data
+
+optrets = {Reqr};
+varargout(1:nargout) = optrets(1:nargout);
+
+end
+
+%% 1. Spacecraft inertias
+
+function I = compute_inertia(Spacecraft)
+% COMPUTE_INERTIA  Compute the inertia of a spacecraft.
+%
+% The computed inertias are appended to the Spacecraft object.
+%
+% This function assumes that the Spacecraft object is analogous to a
+% uniform cylinder.
+
+I.zz = 1/2  * Spacecraft.mass *    Spacecraft.radius^2;
+I.xx = 1/12 * Spacecraft.mass * (3*Spacecraft.radius^2 + Spacecraft.height^2);
+I.yy = I.xx;
+end
+
+%% 2. Evolution laws
+
+function Rot = rotation_requirements(PerfRot, I)
+% ROTATION_REQUIREMENTS  Time evolutions that satisfy the requirements.
+%
+% This function gives the time expressions for the torque, angular
+% momentum and rotation angle so that the rotation requirement is
+% satisfied.
+%
+% To get some details on the formulae stated here, see the report.
+
+% Local Aliases
+ts = PerfRot.settlingTime;
+
+% Constant moment, that yield half the rotation angle
+% at half the rotation time
+Mc = PerfRot.angle/(ts/2)^2 * I;
+
+% Time expressions of the torque, angular momentum and roll angle
+M     = @(t) Mc            .* (t<=ts/2) - Mc                              .* (t>ts/2);
+H     = @(t) Mc*t          .* (t<=ts/2) + Mc*(ts-t)                       .* (t>ts/2);
+angle = @(t) Mc/(2*I)*t.^2 .* (t<=ts/2) + Mc/(2*I)*(-t.^2+2*ts*t-ts.^2/2) .* (t>ts/2);
+
+% Build the return data structure
+Rot.duration = PerfRot.settlingTime;
+Rot.torque   = M;
+Rot.momentum = H;
+Rot.angle    = angle;
+end
+
+%% 3. Requirements plot
+
+function Reqr = plot_requirements(Reqr)
 figure("WindowStyle", "docked");
+title("Time evolutions that satisfy the requirements");
 
+% Build time samples for the plots
+Reqr.Roll.tSample  = linspace(0, Reqr.Roll.duration);
+Reqr.Pitch.tSample = linspace(0, Reqr.Pitch.duration);
+% Reqr.Yaw.tSample   = linspace(0, Reqr.Yaw.duration);
+
+% Torques
 subplot(3, 1, 1);
 hold on
-plot(t_pre, theta_pre(t_pre));
-plot(t_post, theta_post(t_post));
-grid;
-xlabel("Time (s)");
-ylabel("Theta (rad)");
-
-subplot(3, 1, 2);
-hold on
-plot(t_pre, theta_dot_pre(t_pre));
-plot(t_post, theta_dot_post(t_post));
-grid;
-xlabel("Time (s)");
-ylabel("Theta_dot (rad/s)");
-
-subplot(3, 1, 3);
-hold on
-plot(t_pre, M_x*ones(1, numel(t_pre)));
-plot(t_post, -M_x*ones(1, numel(t_post)));
+plot(Reqr.Roll.tSample, Reqr.Roll.torque(Reqr.Roll.tSample));
+plot(Reqr.Pitch.tSample, Reqr.Pitch.torque(Reqr.Pitch.tSample));
 grid;
 xlabel("Time (s)");
 ylabel("Torque (N*m)");
+% legend('Roll', 'Pitch', 'Yaw');
 
+% Angular moments
+subplot(3, 1, 2);
+hold on
+plot(Reqr.Roll.tSample, Reqr.Roll.momentum(Reqr.Roll.tSample));
+plot(Reqr.Pitch.tSample, Reqr.Pitch.momentum(Reqr.Pitch.tSample));
+grid;
+xlabel("Time (s)");
+ylabel("Angular momentum (kg/(m^2*s)");
+% legend('Roll', 'Pitch', 'Yaw');
+
+% Rotation angles
+subplot(3, 1, 3);
+hold on
+plot(Reqr.Roll.tSample, rad2deg(Reqr.Roll.angle(Reqr.Roll.tSample)));
+plot(Reqr.Pitch.tSample, rad2deg(Reqr.Pitch.angle(Reqr.Pitch.tSample)));
+grid;
+xlabel("Time (s)");
+ylabel("Rotation angle (deg)");
+% legend('Roll', 'Pitch', 'Yaw');
 end
