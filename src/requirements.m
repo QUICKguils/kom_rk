@@ -12,11 +12,15 @@ function Reqr = requirements(RunArg, Stm)
 %     PitchEvo (struct) -- Evolution of torque, momentum and angle in pitch.
 %     YawEvo   (struct) -- Evolution of torque, momentum and angle in yaw.
 
+% TODO:
+% - electrical current profile
+% - Etimation of the wheels sizing
+
 % Unpack relevant execution parameters
 LocalRunArg = {RunArg.opts};
 opts = LocalRunArg{:};
 
-% 1. Time evolution of the angles, angular momentums and torques.
+% 1. Time evolution laws
 
 Reqr.RollEvo  = evolution_from_rest(Stm.Roll, Stm.Falcon.Ixx);
 Reqr.PitchEvo = evolution_from_rest(Stm.Pitch, Stm.Falcon.Iyy);
@@ -34,9 +38,7 @@ end
 
 end
 
-%% 1. Spacecraft inertias
-
-%% 2. Evolution laws
+%% 1. Time evolution laws
 
 function RotEvo = evolution_from_rest(RotDesc, I)
 % EVOLUTION_FROM_STEADY_STATE  Time evolutions from steady state.
@@ -92,7 +94,11 @@ YawEvo.angle    = @(t) HitEvo.angle(t)    + RecovEvo.angle(t-HitEvo.duration) ..
 	                 + HitDesc.angle * (t > HitEvo.duration) .* (t <= YawEvo.duration);
 end
 
-%% 3. Requirements plot
+%% 2. Electrical current and voltage estimation
+
+%% 3. Estimation of the reaction wheels sizing
+
+%% 4. Requirements plot
 
 function Reqr = plot_requirements(Reqr)
 figure("WindowStyle", "docked");
@@ -104,7 +110,7 @@ Reqr.PitchEvo.tSample = linspace(0, Reqr.PitchEvo.duration);
 Reqr.YawEvo.tSample   = linspace(0, Reqr.YawEvo.duration);
 
 % Torques
-subplot(3, 1, 1);
+subplot(2, 2, 1);
 hold on
 plot(Reqr.RollEvo.tSample,  Reqr.RollEvo.torque(Reqr.RollEvo.tSample));
 plot(Reqr.PitchEvo.tSample, Reqr.PitchEvo.torque(Reqr.PitchEvo.tSample));
@@ -115,18 +121,18 @@ ylabel("Torque (N*m)");
 % legend('Roll', 'Pitch', 'Yaw');
 
 % Angular moments
-subplot(3, 1, 2);
+subplot(2, 2, 2);
 hold on
 plot(Reqr.RollEvo.tSample,  Reqr.RollEvo.momentum(Reqr.RollEvo.tSample));
 plot(Reqr.PitchEvo.tSample, Reqr.PitchEvo.momentum(Reqr.PitchEvo.tSample));
 plot(Reqr.YawEvo.tSample,   Reqr.YawEvo.momentum(Reqr.YawEvo.tSample));
 grid;
 xlabel("Time (s)");
-ylabel("Angular momentum (kg/(m^2*s)");
+ylabel("Momentum (kg/(m^2*s)");
 % legend('Roll', 'Pitch', 'Yaw');
 
 % Rotation angles
-subplot(3, 1, 3);
+subplot(2, 2, 3);
 hold on
 plot(Reqr.RollEvo.tSample,  rad2deg(Reqr.RollEvo.angle(Reqr.RollEvo.tSample)));
 plot(Reqr.PitchEvo.tSample, rad2deg(Reqr.PitchEvo.angle(Reqr.PitchEvo.tSample)));
@@ -134,5 +140,16 @@ plot(Reqr.YawEvo.tSample,   rad2deg(Reqr.YawEvo.angle(Reqr.YawEvo.tSample)));
 grid;
 xlabel("Time (s)");
 ylabel("Rotation angle (deg)");
+% legend('Roll', 'Pitch', 'Yaw');
+
+% Electrical current profile
+subplot(2, 2, 4);
+hold on
+plot(Reqr.RollEvo.tSample,  rad2deg(Reqr.RollEvo.angle(Reqr.RollEvo.tSample)));
+plot(Reqr.PitchEvo.tSample, rad2deg(Reqr.PitchEvo.angle(Reqr.PitchEvo.tSample)));
+plot(Reqr.YawEvo.tSample,   rad2deg(Reqr.YawEvo.angle(Reqr.YawEvo.tSample)));
+grid;
+xlabel("Time (s)");
+ylabel("Current (A)");
 % legend('Roll', 'Pitch', 'Yaw');
 end

@@ -54,12 +54,21 @@ function main(RunArg)
 	requirements(RunArg, Stm);
 
 	% 2. State-space model
-	% ss_model();
+	SS = ss_model(Stm);
+
+	% 3. LQR control
+	Lqr = lqr_control(RunArg, Stm, SS);
+
+	% 4. PID control
+	Pid = pid_control(RunArg, Stm, SS);
 
 	%% Save generated data
 
 	if contains(RunArg.opts, 's')
 		save(fullfile(resDirectory, "runArguments.mat"), "-struct", "RunArg");
 		save(fullfile(resDirectory, "statement.mat"),    "-struct", "Stm");
+		save(fullfile(resDirectory, "stateSpace.mat"),   "-struct", "SS");
+		save(fullfile(resDirectory, "lqrControl.mat"),   "-struct", "Lqr");
+		save(fullfile(resDirectory, "pidControl.mat"),   "-struct", "Pid");
 	end
 end

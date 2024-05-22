@@ -1,4 +1,4 @@
-function SS = ss_model(RunArg, Stm, SS)
+function SS = ss_model(Stm)
 
 [Roll.A,  Roll.B,  Roll.C,  Roll.D]  = get_roll_ss(Stm);
 % [Pitch.A, Pitch.B, Pitch.C, Pitch.D] = get_pitch_ss(Stm);
@@ -13,13 +13,15 @@ function [A, B, C, D] = get_roll_ss(Stm)
 % GET_ROLL_SS  Get the state-space representation of the roll equations.
 
 % Local aliases
-Ixx = Stm.Falcon.Ixx;
-RW  = Stm.RW;
+Ixx  = Stm.Falcon.Ixx;
+RW   = Stm.RW;
+
+Iw = 1e3; % TODO: remove that when implemented in requirements.m
 
 A = [0, 1;
-	 0, sin(Stm.beta)/Ixx * (RW.torqueCst^2/RW.elecR + RW.damping) * (-2*sin(beta) - Ixx/(Iw*sin(beta)))];
+	 0, sin(RW.beta)/Ixx * (RW.torqueCst^2/RW.elecR + RW.damping) * (-2*sin(RW.beta) - Ixx/(Iw*sin(RW.beta)))];
 B = [0;
-	sin(beta)*RW.torqueCst/(Ixx*RW.elecR)];
+	sin(RW.beta)*RW.torqueCst/(Ixx*RW.elecR)];
 C = [1 0];
 D = 0;
 
