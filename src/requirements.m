@@ -1,5 +1,5 @@
 function varargout = requirements(RunArg, Stm)
-% REQUIREMENTS  Perfomances required for the attitude control system.
+% REQUIREMENTS  Requirements estimation for the attitude control system.
 %
 % Arguments:
 %   Stm    (struct) -- Project statement data
