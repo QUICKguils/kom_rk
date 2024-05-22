@@ -1,4 +1,4 @@
-function varargout = requirements(RunArg, Stm)
+function Reqr = requirements(RunArg, Stm)
 % REQUIREMENTS  Requirements estimation for the attitude control system.
 %
 % Arguments:
@@ -6,51 +6,35 @@ function varargout = requirements(RunArg, Stm)
 %   RunArg (struct) -- Code execution parameters, with fields:
 %     opts  (1xN char) -- Output options
 %       'p' -> Enable [P]lots creation
+% Return:
+%   Reqr (struct) -- Requirements estimation, with fields:
+%     RollEvo  (struct) -- Evolution of torque, momentum and angle in roll.
+%     PitchEvo (struct) -- Evolution of torque, momentum and angle in pitch.
+%     YawEvo   (struct) -- Evolution of torque, momentum and angle in yaw.
 
 % Unpack relevant execution parameters
 LocalRunArg = {RunArg.opts};
 opts = LocalRunArg{:};
 
-% 1. Get the inertias of the spacecraft
+% 1. Time evolution of the angles, angular momentums and torques.
 
-I = compute_inertia(Stm.Falcon);
+Reqr.RollEvo  = evolution_from_rest(Stm.Roll, Stm.Falcon.Ixx);
+Reqr.PitchEvo = evolution_from_rest(Stm.Pitch, Stm.Falcon.Iyy);
+Reqr.YawEvo   = evolution_for_yaw(Stm.Yaw, Stm.Falcon.Izz);
 
-% 2. Time evolution of the angles, angular momentums and torques.
+% 2. Electrical current and voltage estimation
 
-Reqr.RollEvo  = evolution_from_rest(Stm.Roll, I.xx);
-Reqr.PitchEvo = evolution_from_rest(Stm.Pitch, I.yy);
-Reqr.YawEvo   = evolution_for_yaw(Stm.Yaw, I.zz);
+% 3. Estimation of the reaction wheels sizing
 
-% 3. Electrical current and voltage estimation
-
-% 4. Estimation of the reaction wheels sizing
-
-% 5. Requirements plot
+% 4. Requirements plot
 
 if contains(opts, 'p')
 	plot_requirements(Reqr);
 end
 
-% 6. Return the relevant calculated data
-
-optrets = {I, Reqr};
-varargout(1:nargout) = optrets(1:nargout);
 end
 
 %% 1. Spacecraft inertias
-
-function I = compute_inertia(Spacecraft)
-% COMPUTE_INERTIA  Compute the inertia of a spacecraft.
-%
-% The computed inertias are appended to the Spacecraft object.
-%
-% This function assumes that the Spacecraft object is analogous to a
-% uniform cylinder.
-
-I.zz = 1/2  * Spacecraft.mass *    Spacecraft.radius^2;
-I.xx = 1/12 * Spacecraft.mass * (3*Spacecraft.radius^2 + Spacecraft.height^2);
-I.yy = I.xx;
-end
 
 %% 2. Evolution laws
 
