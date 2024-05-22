@@ -17,23 +17,22 @@ I = compute_inertia(Stm.Falcon);
 
 % 2. Time evolution of the angles, angular momentums and torques.
 
-Reqr.Roll  = rotation_requirements(Stm.Perf.Roll, I.xx);
-Reqr.Pitch = rotation_requirements(Stm.Perf.Pitch, I.yy);
-% Reqr.Yaw   = rotation_requirements(Stm.Perf.Yaw, I.zz);
+Reqr.RollEvo  = evolution_from_rest(Stm.Roll, I.xx);
+Reqr.PitchEvo = evolution_from_rest(Stm.Pitch, I.yy);
+Reqr.YawEvo   = evolution_for_yaw(Stm.Yaw, I.zz);
 
-% 3. Requirements plot
+% 3. Electrical current and voltage estimation
+
+% 4. Requirements plot
 
 if contains(opts, 'p')
 	plot_requirements(Reqr);
 end
 
-% 4. Electrical current and voltage estimation
-
 % 5. Return the relevant calculated data
 
-optrets = {Reqr};
+optrets = {I, Reqr};
 varargout(1:nargout) = optrets(1:nargout);
-
 end
 
 %% 1. Spacecraft inertias
@@ -53,32 +52,58 @@ end
 
 %% 2. Evolution laws
 
-function Rot = rotation_requirements(PerfRot, I)
-% ROTATION_REQUIREMENTS  Time evolutions that satisfy the requirements.
+function RotEvo = evolution_from_rest(RotDesc, I)
+% EVOLUTION_FROM_STEADY_STATE  Time evolutions from steady state.
 %
 % This function gives the time expressions for the torque, angular
-% momentum and rotation angle so that the rotation requirement is
-% satisfied.
+% momentum and rotation angle assuming an initial rest condition.
+% That is, the initial time is 0s, the inital rotation angle is 0 rad,
+% and the inital rotation speed is 0 rad/s.
 %
 % To get some details on the formulae stated here, see the report.
 
-% Local Aliases
-ts = PerfRot.settlingTime;
+% Local aliases
+tf = RotDesc.settlingTime;
+ti = 0;  % Initial time [s]
 
 % Constant moment, that yield half the rotation angle
 % at half the rotation time
-Mc = PerfRot.angle/(ts/2)^2 * I;
+Mc = RotDesc.angle/(tf/2)^2 * I;
 
 % Time expressions of the torque, angular momentum and roll angle
-M     = @(t) Mc            .* (t<=ts/2) - Mc                              .* (t>ts/2);
-H     = @(t) Mc*t          .* (t<=ts/2) + Mc*(ts-t)                       .* (t>ts/2);
-angle = @(t) Mc/(2*I)*t.^2 .* (t<=ts/2) + Mc/(2*I)*(-t.^2+2*ts*t-ts.^2/2) .* (t>ts/2);
+M     = @(t) Mc                              .* (ti<=t)  .* (t<=tf/2)...
+	       - Mc                              .* (t>tf/2) .* (t<=tf);
+H     = @(t) Mc*t                            .* (ti<=t)  .* (t<=tf/2)...
+	       + Mc*(tf-t)                       .* (t>tf/2) .* (t<=tf);
+angle = @(t) Mc/(2*I)*t.^2                   .* (ti<=t)  .* (t<=tf/2)...
+	       + Mc/(2*I)*(-t.^2+2*tf*t-tf.^2/2) .* (t>tf/2) .* (t<=tf);
 
 % Build the return data structure
-Rot.duration = PerfRot.settlingTime;
-Rot.torque   = M;
-Rot.momentum = H;
-Rot.angle    = angle;
+RotEvo.duration = tf - ti;
+RotEvo.torque   = M;
+RotEvo.momentum = H;
+RotEvo.angle    = angle;
+end
+
+function YawEvo = evolution_for_yaw(YawDesc, Izz)
+% EVOLUTION_FOR_YAW  Time evolution for the yaw requirement.
+
+% Hit phase: laser hit + stopping yaw speed
+HitDesc.settlingTime = 2 * YawDesc.laserTime;
+HitDesc.angle = YawDesc.laserTorque/Izz * YawDesc.laserTime^2;
+HitEvo = evolution_from_rest(HitDesc, Izz);
+
+% Recovery phase: bring back yaw angle to 0 rad
+RecovDesc.settlingTime = YawDesc.recoveryTime - YawDesc.laserTime;
+RecovDesc.angle = -HitDesc.angle;
+RecovEvo = evolution_from_rest(RecovDesc, Izz);
+
+% Combine the yaw attitude of hit and recovery phase
+YawEvo.duration = HitEvo.duration + RecovEvo.duration;
+YawEvo.torque   = @(t) HitEvo.torque(t)   + RecovEvo.torque(t-HitEvo.duration);
+YawEvo.momentum = @(t) HitEvo.momentum(t) + RecovEvo.momentum(t-HitEvo.duration);
+YawEvo.angle    = @(t) HitEvo.angle(t)    + RecovEvo.angle(t-HitEvo.duration) ...
+	                 + HitDesc.angle * (t > HitEvo.duration) .* (t <= YawEvo.duration);
 end
 
 %% 3. Requirements plot
@@ -88,15 +113,16 @@ figure("WindowStyle", "docked");
 title("Time evolutions that satisfy the requirements");
 
 % Build time samples for the plots
-Reqr.Roll.tSample  = linspace(0, Reqr.Roll.duration);
-Reqr.Pitch.tSample = linspace(0, Reqr.Pitch.duration);
-% Reqr.Yaw.tSample   = linspace(0, Reqr.Yaw.duration);
+Reqr.RollEvo.tSample  = linspace(0, Reqr.RollEvo.duration);
+Reqr.PitchEvo.tSample = linspace(0, Reqr.PitchEvo.duration);
+Reqr.YawEvo.tSample   = linspace(0, Reqr.YawEvo.duration);
 
 % Torques
 subplot(3, 1, 1);
 hold on
-plot(Reqr.Roll.tSample, Reqr.Roll.torque(Reqr.Roll.tSample));
-plot(Reqr.Pitch.tSample, Reqr.Pitch.torque(Reqr.Pitch.tSample));
+plot(Reqr.RollEvo.tSample,  Reqr.RollEvo.torque(Reqr.RollEvo.tSample));
+plot(Reqr.PitchEvo.tSample, Reqr.PitchEvo.torque(Reqr.PitchEvo.tSample));
+plot(Reqr.YawEvo.tSample,   Reqr.YawEvo.torque(Reqr.YawEvo.tSample));
 grid;
 xlabel("Time (s)");
 ylabel("Torque (N*m)");
@@ -105,8 +131,9 @@ ylabel("Torque (N*m)");
 % Angular moments
 subplot(3, 1, 2);
 hold on
-plot(Reqr.Roll.tSample, Reqr.Roll.momentum(Reqr.Roll.tSample));
-plot(Reqr.Pitch.tSample, Reqr.Pitch.momentum(Reqr.Pitch.tSample));
+plot(Reqr.RollEvo.tSample,  Reqr.RollEvo.momentum(Reqr.RollEvo.tSample));
+plot(Reqr.PitchEvo.tSample, Reqr.PitchEvo.momentum(Reqr.PitchEvo.tSample));
+plot(Reqr.YawEvo.tSample,   Reqr.YawEvo.momentum(Reqr.YawEvo.tSample));
 grid;
 xlabel("Time (s)");
 ylabel("Angular momentum (kg/(m^2*s)");
@@ -115,8 +142,9 @@ ylabel("Angular momentum (kg/(m^2*s)");
 % Rotation angles
 subplot(3, 1, 3);
 hold on
-plot(Reqr.Roll.tSample, rad2deg(Reqr.Roll.angle(Reqr.Roll.tSample)));
-plot(Reqr.Pitch.tSample, rad2deg(Reqr.Pitch.angle(Reqr.Pitch.tSample)));
+plot(Reqr.RollEvo.tSample,  rad2deg(Reqr.RollEvo.angle(Reqr.RollEvo.tSample)));
+plot(Reqr.PitchEvo.tSample, rad2deg(Reqr.PitchEvo.angle(Reqr.PitchEvo.tSample)));
+plot(Reqr.YawEvo.tSample,   rad2deg(Reqr.YawEvo.angle(Reqr.YawEvo.tSample)));
 grid;
 xlabel("Time (s)");
 ylabel("Rotation angle (deg)");

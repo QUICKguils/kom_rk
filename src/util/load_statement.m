@@ -27,15 +27,14 @@ Stm.RW.density   = 8e3;           % Density of steel composing the wheels [kg/mÂ
 % TODO: add thrusters statement data if we need to use them
 
 % Performance requirements
-Stm.Perf.Roll.angle         = deg2rad(90);  % Roll rotation angle [rad]
-Stm.Perf.Roll.PO            = 20;           % Percentage overshoot
-Stm.Perf.Roll.settlingTime  = 10;           % Settling time [s]
-Stm.Perf.Roll.SettlingRtol  = 0.1;          % Settling relative tolerance
-Stm.Perf.Pitch.angle        = deg2rad(30);  % Pitch rotation angle [rad]
-Stm.Perf.Pitch.PO           = 5;            % Percentage overshoot
-Stm.Perf.Pitch.settlingTime = 5;            % Settling time [s]
-Stm.Perf.Yaw.recoveryTime   = 5;            % Laser hit recovery time [s]
-Stm.Perf.Yaw.LaserTorque    = 4000;         % Torque induced by laser hit [N/m]
-Stm.Perf.Yaw.LaserTime      = 0.5;          % Duration of laser hit [s]
-
+Stm.Roll.angle         = deg2rad(90);  % Roll rotation angle [rad]
+Stm.Roll.PO            = 20;           % Percentage overshoot
+Stm.Roll.settlingTime  = 10;           % Settling time [s]
+Stm.Roll.SettlingRtol  = 0.1;          % Settling relative tolerance
+Stm.Pitch.angle        = deg2rad(30);  % Pitch rotation angle [rad]
+Stm.Pitch.PO           = 5;            % Percentage overshoot
+Stm.Pitch.settlingTime = 5;            % Settling time [s]
+Stm.Yaw.recoveryTime   = 5;            % Laser hit recovery time [s]
+Stm.Yaw.laserTorque    = 4000;         % Torque induced by laser hit [N/m]
+Stm.Yaw.laserTime      = 0.5;          % Duration of laser hit [s]
 end

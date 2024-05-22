@@ -5,5 +5,4 @@ function Default = load_defaults
 %   'p' -> Enable [P]lots creation
 %   's' -> [S]ave generated data
 Default.opts = 'ps';
-
 end
