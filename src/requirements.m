@@ -23,13 +23,15 @@ Reqr.YawEvo   = evolution_for_yaw(Stm.Yaw, I.zz);
 
 % 3. Electrical current and voltage estimation
 
-% 4. Requirements plot
+% 4. Estimation of the reaction wheels sizing
+
+% 5. Requirements plot
 
 if contains(opts, 'p')
 	plot_requirements(Reqr);
 end
 
-% 5. Return the relevant calculated data
+% 6. Return the relevant calculated data
 
 optrets = {I, Reqr};
 varargout(1:nargout) = optrets(1:nargout);

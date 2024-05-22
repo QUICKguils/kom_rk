@@ -1,1 +1,41 @@
 # Spacecraft Control Project
+
+This repository holds all the code written for the project carried out as part
+of the Spacecraft Control course (AERO0036), academic year 2023-2024.
+
+## Basic usage
+
+From the top level directory (where this README lies), just run the main project
+file:
+```matlab
+run src\main.m
+```
+The execution of this main function add all the project files to the matlab
+path, for the current matlab session. Assuming that the top level directory path
+is called `rootDir`, it is still possible to add the project files manually to
+the matlab path:
+```matlab
+addpath(genpath(rootDir));
+```
+
+## Advanced usage
+
+### Options of the main file
+
+The default code execution parameters are stored in the
+`src/util/load_defaults.m` file.
+It is however possible to launch the main function overriding these default
+values.
+The docstring of the main function gives an exhaustive usage explanation.
+In particular, it is possible to decide whether the relevant data that were
+computed should be saved. If yes, a `res/` directory will be created at top
+level, and will store these data in appropriate `.MAT` files.
+
+For example:
+```matlab
+% Override some default code execution parameters:
+RunArg.opts   = 's';  % Only save the computed data, don't plot them.
+
+% Launch the main function.
+main(RunArg);
+```
