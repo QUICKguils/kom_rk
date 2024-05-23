@@ -9,11 +9,10 @@ Stm.Falcon.diameter = 20;     % Diameter [m]
 Stm.Falcon.radius   = 10;     % Radius [m]
 Stm.Falcon.height   = 8;      % Height [m]
 Stm.Falcon.mass     = 100e3;  % Mass (without control system) [kg]
-% Inertias (see src/utils/spacecraft_inertia.m)
-[Ixx, Iyy, Izz] = spacecraft_inertia(Stm.Falcon);
-Stm.Falcon.Ixx = Ixx;  % Inertia along the roll  axis [kg*m²]
-Stm.Falcon.Iyy = Iyy;  % Inertia along the pitch axis [kg*m²]
-Stm.Falcon.Izz = Izz;  % Inertia along the yaw   axis [kg*m²]
+[Ixx, Iyy, Izz]     = spacecraft_inertia(Stm.Falcon);  % See: src/utils/spacecraft_inertia.m
+Stm.Falcon.Ixx      = Ixx;    % Inertia along the roll  axis [kg*m²]
+Stm.Falcon.Iyy      = Iyy;    % Inertia along the pitch axis [kg*m²]
+Stm.Falcon.Izz      = Izz;    % Inertia along the yaw   axis [kg*m²]
 
 % Requirement on the control system
 Stm.Acs.maxMass    = 10e3;   % Max. mass [kg]

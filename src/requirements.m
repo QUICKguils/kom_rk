@@ -26,9 +26,16 @@ Reqr.RollEvo  = evolution_from_rest(Stm.Roll, Stm.Falcon.Ixx);
 Reqr.PitchEvo = evolution_from_rest(Stm.Pitch, Stm.Falcon.Iyy);
 Reqr.YawEvo   = evolution_for_yaw(Stm.Yaw, Stm.Falcon.Izz);
 
-% 2. Electrical current and voltage estimation
+% 2. Electrical current estimates
 
-% 3. Estimation of the reaction wheels sizing
+[i_roll, i_pitch, i_yaw] = current_needs(Stm, Reqr);
+Reqr.RollEvo.current  = i_roll;
+Reqr.PitchEvo.current = i_pitch;
+Reqr.YawEvo.current   = i_yaw;
+
+% 3. Reaction wheels sizing
+
+Reqr.RW = wheel_sizing();
 
 % 4. Requirements plot
 
@@ -94,9 +101,24 @@ YawEvo.angle    = @(t) HitEvo.angle(t)    + RecovEvo.angle(t-HitEvo.duration) ..
 	                 + HitDesc.angle * (t > HitEvo.duration) .* (t <= YawEvo.duration);
 end
 
-%% 2. Electrical current and voltage estimation
+%% 2. Electrical current estimates
 
-%% 3. Estimation of the reaction wheels sizing
+function [i_roll, i_pitch, i_yaw] = current_needs(Stm, Reqr)
+% CURRENT_NEEDS  Compute the current in RW to achieve required attitude.
+%
+% See formula derivations in the report.
+
+i_roll  = @(t) Reqr.RollEvo.torque(t)  ./ (2*Stm.RW.torqueCst*sin(Stm.RW.beta));
+i_pitch = @(t) Reqr.PitchEvo.torque(t) ./ (2*Stm.RW.torqueCst*sin(Stm.RW.beta));
+i_yaw   = @(t) Reqr.YawEvo.torque(t)   ./ (4*Stm.RW.torqueCst*cos(Stm.RW.beta));
+end
+
+%% 3. Reaction wheels sizing
+function Sizing = wheel_sizing()
+% WHEEL_SIZING  Propose a first sizing for the reaction wheels.
+
+Sizing.test = 0;
+end
 
 %% 4. Requirements plot
 
@@ -145,9 +167,9 @@ ylabel("Rotation angle (deg)");
 % Electrical current profile
 subplot(2, 2, 4);
 hold on
-plot(Reqr.RollEvo.tSample,  rad2deg(Reqr.RollEvo.angle(Reqr.RollEvo.tSample)));
-plot(Reqr.PitchEvo.tSample, rad2deg(Reqr.PitchEvo.angle(Reqr.PitchEvo.tSample)));
-plot(Reqr.YawEvo.tSample,   rad2deg(Reqr.YawEvo.angle(Reqr.YawEvo.tSample)));
+plot(Reqr.RollEvo.tSample,  Reqr.RollEvo.current(Reqr.RollEvo.tSample));
+plot(Reqr.PitchEvo.tSample, Reqr.PitchEvo.current(Reqr.PitchEvo.tSample));
+plot(Reqr.YawEvo.tSample,   Reqr.YawEvo.current(Reqr.YawEvo.tSample));
 grid;
 xlabel("Time (s)");
 ylabel("Current (A)");

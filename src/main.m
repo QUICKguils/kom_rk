@@ -51,7 +51,7 @@ function main(RunArg)
 	Stm = load_statement();
 
 	% 1. Performance requirements
-	requirements(RunArg, Stm);
+	Reqr = requirements(RunArg, Stm);
 
 	% 2. State-space model
 	SS = ss_model(Stm);
@@ -67,6 +67,7 @@ function main(RunArg)
 	if contains(RunArg.opts, 's')
 		save(fullfile(resDirectory, "runArguments.mat"), "-struct", "RunArg");
 		save(fullfile(resDirectory, "statement.mat"),    "-struct", "Stm");
+		save(fullfile(resDirectory, "requirements.mat"), "-struct", "Reqr");
 		save(fullfile(resDirectory, "stateSpace.mat"),   "-struct", "SS");
 		save(fullfile(resDirectory, "lqrControl.mat"),   "-struct", "Lqr");
 		save(fullfile(resDirectory, "pidControl.mat"),   "-struct", "Pid");
