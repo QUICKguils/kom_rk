@@ -1,8 +1,13 @@
 % REFRESH_WORKSPACE  Bring computed data in global workspace.
 
-Stm    = load("res/statement.mat");
-RunArg = load("res/runArguments.mat");
-Reqr   = load("res/requirements.mat");
-SS     = load("res/stateSpace.mat");
-Lqr    = load("res/lqrControl.mat");
-Pid    = load("res/pidControl.mat");
+% Find the results directory
+resDirectory = fullfile(fileparts(mfilename('fullpath')), "../../res/");
+
+Stm    = load(fullfile(resDirectory, "statement.mat"));
+RunArg = load(fullfile(resDirectory, "runArguments.mat"));
+Reqr   = load(fullfile(resDirectory, "requirements.mat"));
+SS     = load(fullfile(resDirectory, "stateSpace.mat"));
+Lqr    = load(fullfile(resDirectory, "lqrControl.mat"));
+Pid    = load(fullfile(resDirectory, "pidControl.mat"));
+
+clear resDirectory;
