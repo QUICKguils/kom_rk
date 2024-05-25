@@ -13,7 +13,6 @@ function Reqr = requirements(RunArg, Stm)
 %     YawEvo   (struct) -- Evolution of torque, momentum and angle in yaw.
 
 % TODO:
-% - electrical current profile
 % - Etimation of the wheels sizing
 
 % Unpack relevant execution parameters
@@ -57,9 +56,9 @@ function RotEvo = evolution_from_rest(RotDesc, I)
 %
 % To get some details on the formulae stated here, see the report.
 
-% Local aliases
-tf = RotDesc.settlingTime;
+% Constants and local aliases
 ti = 0;  % Initial time [s]
+tf = RotDesc.settlingTime;
 
 % Constant moment, that yield half the rotation angle
 % at half the rotation time
@@ -123,13 +122,16 @@ end
 %% 4. Requirements plot
 
 function Reqr = plot_requirements(Reqr)
-figure("WindowStyle", "docked");
-title("Time evolutions that satisfy the requirements");
+% PLOT_REQUIREMENTS  Plot the attitude and current that meets the requirements.
 
 % Build time samples for the plots
-Reqr.RollEvo.tSample  = linspace(0, Reqr.RollEvo.duration);
-Reqr.PitchEvo.tSample = linspace(0, Reqr.PitchEvo.duration);
-Reqr.YawEvo.tSample   = linspace(0, Reqr.YawEvo.duration);
+nSample = 101;
+Reqr.RollEvo.tSample  = linspace(0, Reqr.RollEvo.duration,  nSample);
+Reqr.PitchEvo.tSample = linspace(0, Reqr.PitchEvo.duration, nSample);
+Reqr.YawEvo.tSample   = linspace(0, Reqr.YawEvo.duration,   nSample);
+
+figure("WindowStyle", "docked");
+title("Time evolutions that satisfy the requirements");
 
 % Torques
 subplot(2, 2, 1);
@@ -150,7 +152,7 @@ plot(Reqr.PitchEvo.tSample, Reqr.PitchEvo.momentum(Reqr.PitchEvo.tSample));
 plot(Reqr.YawEvo.tSample,   Reqr.YawEvo.momentum(Reqr.YawEvo.tSample));
 grid;
 xlabel("Time (s)");
-ylabel("Momentum (kg/(m^2*s)");
+ylabel("Momentum (kg*m²/s)");
 % legend('Roll', 'Pitch', 'Yaw');
 
 % Rotation angles
