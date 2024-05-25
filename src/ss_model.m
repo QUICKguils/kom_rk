@@ -7,10 +7,10 @@ function SS = ss_model(Stm)
 % Arguments:
 %   Stm    (struct) -- Project statement data
 % Return:
-%   SS (struct) -- State-space representation, with fields:
-%     Roll  (struct) -- A, B, C and D matrices for the roll dynamics.
-%     Pitch (struct) -- A, B, C and D matrices for the pitch dynamics.
-%     Yaw   (struct) -- A, B, C and D matrices for the yaw dynamics.
+%   SS (struct) -- State-space representations, with fields:
+%     Roll  (struct) -- A, B, C and D matrices for the roll dynamics
+%     Pitch (struct) -- A, B, C and D matrices for the pitch dynamics
+%     Yaw   (struct) -- A, B, C and D matrices for the yaw dynamics
 
 [Roll.A,  Roll.B,  Roll.C,  Roll.D]  = ss_roll(Stm);
 [Pitch.A, Pitch.B, Pitch.C, Pitch.D] = ss_pitch(Stm);

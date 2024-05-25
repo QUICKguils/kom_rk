@@ -2,15 +2,15 @@ function Reqr = requirements(RunArg, Stm)
 % REQUIREMENTS  Requirements estimation for the attitude control system.
 %
 % Arguments:
-%   Stm    (struct) -- Project statement data
 %   RunArg (struct) -- Code execution parameters, with fields:
 %     opts  (1xN char) -- Output options
 %       'p' -> Enable [P]lots creation
+%   Stm    (struct) -- Project statement data
 % Return:
 %   Reqr (struct) -- Requirements estimation, with fields:
-%     RollEvo  (struct) -- Evolution of torque, momentum and angle in roll.
-%     PitchEvo (struct) -- Evolution of torque, momentum and angle in pitch.
-%     YawEvo   (struct) -- Evolution of torque, momentum and angle in yaw.
+%     RollEvo  (struct) -- Evolution of torque, momentum and angle in roll
+%     PitchEvo (struct) -- Evolution of torque, momentum and angle in pitch
+%     YawEvo   (struct) -- Evolution of torque, momentum and angle in yaw
 
 % TODO:
 % - Etimation of the wheels sizing

@@ -2,12 +2,16 @@ function main(RunArg)
 % MAIN  Trigger all the code of the project.
 %
 % Argument:
-%   opts (1xN char) -- Output options.
-%     'p' -> Enable [P]lots creation.
-%     's' -> [S]ave generated data.
+%   opts (1xN char) -- Output options
+%     'p' -> Enable [P]lots creation
+%     's' -> [S]ave generated data
+%  selsim ({'roll', 'pitch', 'yaw'}) -- Select simulink model
+%   'roll'  -> Run the roll models
+%   'pitch' -> Run the pitch models
+%   'yaw'   -> Run the yaw models
 %
-% The default values used to run this function
-% are stored in util/load_defaults.m
+% The default values used to run this function are stored in
+% util/load_defaults.m
 
 %% Set program initial state
 

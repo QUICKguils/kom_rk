@@ -1,5 +1,21 @@
 function Lqr = lqr_control(RunArg, Stm, SS)
 % LQR_CONTROL  LQR attitude control system for the Millennium Falcon.
+%
+% Arguments:
+%   RunArg (struct) -- Code execution parameters, with fields:
+%     opts  (1xN char) -- Output options
+%       'p' -> Enable [P]lots creation
+%   Stm    (struct) -- Project statement data
+%   SS     (struct) -- State-space representations
+% Return:
+%   Reqr (struct) -- Requirements estimation, with fields:
+%     RollEvo  (struct) -- Evolution of torque, momentum and angle in roll
+%     PitchEvo (struct) -- Evolution of torque, momentum and angle in pitch
+%     YawEvo   (struct) -- Evolution of torque, momentum and angle in yaw
+
+% Unpack relevant execution parameters
+LocalRunArg = {RunArg.opts, Runarg.selsim};
+[opts, selsim] = LocalRunArg{:};
 
 %% Roll
 
@@ -35,7 +51,7 @@ Lqr.Roll.A_cl = A_cl;
 Lqr.Roll.sys  = sys;
 
 % Simulink
-Lqr.selectSim = 'roll';
 
+Lqr.selectSim = 'roll';
 
 end
