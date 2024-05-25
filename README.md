@@ -29,12 +29,12 @@ values.
 The docstring of the main function gives an exhaustive usage explanation.
 In particular, it is possible to decide whether the relevant data that were
 computed should be saved. If yes, a `res/` directory will be created at top
-level, and will store these data in appropriate `.MAT` files.
+level, and will store these data in appropriate `.mat` files.
 
 For example:
 ```matlab
 % Override some default code execution parameters:
-RunArg.opts   = 's';  % Only save the computed data, don't plot them.
+RunArg.opts = 's';  % Only save the computed data, don't plot them.
 
 % Launch the main function.
 main(RunArg);
@@ -47,14 +47,14 @@ main(RunArg);
   - `requirements.m` provides an estimation of the spacecraft attitude and power
     needs that meets the performance requirements.
   - `ss_model.m` provides the state-space representations of the spacecraft
-    dynamcis in roll, pitch and yaw.
+    dynamics in roll, pitch and yaw.
   - `lqr_control.m` provides a controller derived from a linear quadratic
     regulation (LQR).
-  - `pid_control` provides a controller derived from a
+  - `pid_control.m` provides a controller derived from a
     proportional-integral-derivative control (PID control).
   - `util/`: collection of utility functions that are used throughout the
     project.
   - `slx/`: Simulink models for LQR and PID control.
 - `res/`: contains the `.mat` files that hold the relevant data that were
-  computed thoughout the project. This directory is automatically created, if
+  computed throughout the project. This directory is automatically created, if
   absent on the user's machine.
