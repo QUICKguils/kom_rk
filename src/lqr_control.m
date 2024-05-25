@@ -34,5 +34,8 @@ Lqr.Roll.K    = K;
 Lqr.Roll.A_cl = A_cl;
 Lqr.Roll.sys  = sys;
 
+% Simulink
+Lqr.selectSim = 'roll';
+
 
 end
