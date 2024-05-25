@@ -7,8 +7,14 @@
 # Personnal draft files
 draft.m
 
-# Don't track changes for the result files
+# Computed data directory
 res/
+
+# Simulink cache directory
+slprj/
+
+# Simulink autosave extension
+*.slx.autosave
 
 # Generated .tex files from matlab2tikz
 *.tex
