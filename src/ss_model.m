@@ -1,8 +1,8 @@
 function SS = ss_model(Stm)
 %  SS_MODEL  Get the s.s. representations of the spacecraft dynamics.
 %
-% The returned state-space representations are derived from the appendix
-% of the project statement.
+% The returned state-space representations are derived from the set of
+% equations provided by the appendix of the project statement.
 %
 % Arguments:
 %   Stm    (struct) -- Project statement data
@@ -44,8 +44,8 @@ B = [
 ];
 
 % C and D: output y(t) is the state vector x(t)
-C = [1 0];
-D = 0;
+C = eye(2);
+D = [0; 0];
 end
 
 function [A, B, C, D] = ss_pitch(Stm)
@@ -71,8 +71,8 @@ B = [
 ];
 
 % C and D: output y(t) is the state vector x(t)
-C = [1 0];
-D = 0;
+C = eye(2);
+D = [0; 0];
 end
 
 function [A, B, C, D] = ss_yaw(Stm)
@@ -98,6 +98,6 @@ B = [
 ];
 
 % C and D: output y(t) is the state vector x(t)
-C = [1 0];
-D = 0;
+C = eye(2);
+D = [0; 0];
 end
