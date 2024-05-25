@@ -10,8 +10,9 @@ draft.m
 # Computed data directory
 res/
 
-# Simulink cache directory
+# Simulink cache
 slprj/
+*.slxc
 
 # Simulink autosave extension
 *.slx.autosave
