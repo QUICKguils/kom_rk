@@ -39,3 +39,22 @@ RunArg.opts   = 's';  % Only save the computed data, don't plot them.
 % Launch the main function.
 main(RunArg);
 ```
+
+## Project architecture
+
+- `src/`:
+  - `main.m` triggers all the code of the project.
+  - `requirements.m` provides an estimation of the spacecraft attitude and power
+    needs that meets the performance requirements.
+  - `ss_model.m` provides the state-space representations of the spacecraft
+    dynamcis in roll, pitch and yaw.
+  - `lqr_control.m` provides a controller derived from a linear quadratic
+    regulation (LQR).
+  - `pid_control` provides a controller derived from a
+    proportional-integral-derivative control (PID control).
+  - `util/`: collection of utility functions that are used throughout the
+    project.
+  - `slx/`: Simulink models for LQR and PID control.
+- `res/`: contains the `.mat` files that hold the relevant data that were
+  computed thoughout the project. This directory is automatically created, if
+  absent on the user's machine.
