@@ -54,7 +54,7 @@ function RotEvo = evolution_from_rest(RotDesc, I)
 % That is, the initial time is 0s, the inital rotation angle is 0 rad,
 % and the inital rotation speed is 0 rad/s.
 %
-% To get some details on the formulae stated here, see the report.
+% See formula derivations in the report.
 
 % Constants and local aliases
 ti = 0;  % Initial time [s]
@@ -116,7 +116,7 @@ end
 function Sizing = wheel_sizing()
 % WHEEL_SIZING  Propose a first sizing for the reaction wheels.
 
-Sizing.test = 0;
+Sizing.I = 1e3;
 end
 
 %% 4. Requirements plot
@@ -130,6 +130,7 @@ Reqr.RollEvo.tSample  = linspace(0, Reqr.RollEvo.duration,  nSample);
 Reqr.PitchEvo.tSample = linspace(0, Reqr.PitchEvo.duration, nSample);
 Reqr.YawEvo.tSample   = linspace(0, Reqr.YawEvo.duration,   nSample);
 
+% Instantiate a new figure object
 figure("WindowStyle", "docked");
 title("Time evolutions that satisfy the requirements");
 

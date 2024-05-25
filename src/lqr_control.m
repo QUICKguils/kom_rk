@@ -10,8 +10,8 @@ C = SS.Roll.C;
 D = SS.Roll.D;
 
 % Heuristically determined Q and R matrices.
-Q = diag([1, 0]);  % That's the roll angle that matters here.
-R = 1e-7;
+Q = 1e13 * diag([1, 1]);  % The rotation angle matters
+R = 0.001;
 
 % Optimal gain
 K = lqr(A, B, Q, R);
@@ -20,13 +20,13 @@ K = lqr(A, B, Q, R);
 A_cl = A - B*K;
 sys = ss(A_cl, B, C, D);
 
-timeSample = 0:0.01:Stm.Roll.settlingTime;
-target = Stm.Roll.angle;
-
-x0 = [target; 0];
-[y, t, ~] = initial(sys, x0, timeSample);
-figure("WindowStyle", "docked");
-plot(t, 1 - y/target);
+% timeSample = 0:0.01:Stm.Roll.settlingTime;
+% target = Stm.Roll.angle;
+% 
+% x0 = [target; 0];
+% [y, t, ~] = initial(sys, x0, timeSample);
+% % figure("WindowStyle", "docked");
+% % plot(t, 1 - y/target);
 
 Lqr.Roll.Q    = Q;
 Lqr.Roll.R    = R;
