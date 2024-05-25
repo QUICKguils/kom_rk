@@ -13,9 +13,9 @@ function Lqr = lqr_control(RunArg, Stm, SS)
 %     PitchEvo (struct) -- Evolution of torque, momentum and angle in pitch
 %     YawEvo   (struct) -- Evolution of torque, momentum and angle in yaw
 
-% Unpack relevant execution parameters
-LocalRunArg = {RunArg.opts, Runarg.selsim};
-[opts, selsim] = LocalRunArg{:};
+% % Unpack relevant execution parameters
+% LocalRunArg = {RunArg.opts, RunArg.selsim};
+% [opts, selsim] = LocalRunArg{:};
 
 %% Roll
 
@@ -51,7 +51,5 @@ Lqr.Roll.A_cl = A_cl;
 Lqr.Roll.sys  = sys;
 
 % Simulink
-
-Lqr.selectSim = 'roll';
 
 end
