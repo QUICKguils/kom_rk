@@ -33,12 +33,15 @@ level, and will store these data in appropriate `.mat` files.
 
 For example:
 ```matlab
-% Override some default code execution parameters:
-RunArg.opts   = 's';   % Only save the computed data, don't plot them.
-RunArg.selsim = 'yaw'  % Run the simulink models for the yaw.
+% Override some default code execution parameters
+RunArg.opts   = 's';   % Only save the computed data, don't plot them
+RunArg.selsim = 'yaw'  % Run the simulink models for the yaw
 
-% Launch the main function.
+% Launch the main function
 main(RunArg);
+
+% Tip: this little script loads/refreshes computed data in the global workspace
+refresh_workspace;
 ```
 
 ## Project architecture
