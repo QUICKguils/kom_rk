@@ -6,9 +6,9 @@ function main(RunArg)
 %     'p' -> Enable [P]lots creation
 %     's' -> [S]ave generated data
 %  selsim ({'roll', 'pitch', 'yaw'}) -- Select simulink model
-%   'roll'  -> Run the roll models
-%   'pitch' -> Run the pitch models
-%   'yaw'   -> Run the yaw models
+%    'roll'  -> Run the roll models
+%    'pitch' -> Run the pitch models
+%    'yaw'   -> Run the yaw models
 %
 % The default values used to run this function are stored in
 % util/load_defaults.m
@@ -61,7 +61,7 @@ Reqr = requirements(RunArg, Stm);
 SS = ss_model(Stm);
 
 % 3. LQR control
-Lqr = lqr_control(RunArg, Stm, SS);
+Lqr = lqr_control(RunArg, SS);
 
 % 4. PID control
 Pid = pid_control(RunArg, Stm, SS);
