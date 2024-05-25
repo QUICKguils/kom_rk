@@ -37,10 +37,10 @@ end
 %% 1. Heuristics for Q and R matrices
 
 function [Q, R] = heuristic_QR(axis)
-% HEURISTIC_QR  Return the heuristics values of Q and R.
+% HEURISTIC_QR  Store the heuristic values of Q and R.
 %
 % Argument:
-%   axis ({'roll', 'pitch', 'yaw'}) -- select the axis of rotation
+%   axis ({'roll', 'pitch', 'yaw'}) -- select the s.s. system
 
 switch axis
 	case 'roll'
@@ -55,7 +55,7 @@ switch axis
 end
 end
 
-% 2. LQR controller for the state-space systems
+%% 2. LQR controller for the state-space systems
 
 function Lqr = lqr_system(SS_rot, Q, R)
 % LQR_system Return LQR controller for the given state-space system.
@@ -69,9 +69,10 @@ B = SS_rot.B;
 % Optimal gain
 K = lqr(A, B, Q, R);
 
+% TODO: see if useful to compute A_cl and the close loop system
 % % Full state feedback system
-% A_cl = A - B*K;  % TODO: see if useful to compute that
-% sys = ss(A_cl, B, C, D);  % TODO: see if useful to compute that
+% A_cl = A - B*K;
+% sys = ss(A_cl, B, C, D);
 
 % Build the return data structure
 Lqr.Q    = Q;
