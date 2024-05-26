@@ -133,10 +133,10 @@ Reqr.YawEvo.tSample   = linspace(0, Reqr.YawEvo.duration,   nSample);
 % Instantiate a new figure object
 figure("WindowStyle", "docked");
 title("Time evolutions that satisfy the requirements");
+hold on;
 
 % Torques
 subplot(2, 2, 1);
-hold on
 plot(Reqr.RollEvo.tSample,  Reqr.RollEvo.torque(Reqr.RollEvo.tSample));
 plot(Reqr.PitchEvo.tSample, Reqr.PitchEvo.torque(Reqr.PitchEvo.tSample));
 plot(Reqr.YawEvo.tSample,   Reqr.YawEvo.torque(Reqr.YawEvo.tSample));
@@ -177,4 +177,6 @@ grid;
 xlabel("Time (s)");
 ylabel("Current (A)");
 % legend('Roll', 'Pitch', 'Yaw');
+
+hold off;
 end
