@@ -58,10 +58,10 @@ Stm = load_statement();
 Reqr = requirements(RunArg, Stm);
 
 % 2. State-space model
-SS = ss_model(Stm);
+SS = ss_model(Stm, Reqr);
 
 % 3. LQR control
-Lqr = lqr_control(RunArg, SS);
+Lqr = lqr_control(RunArg, Stm, SS);
 
 % 4. PID control
 Pid = pid_control(RunArg, Stm, SS);
