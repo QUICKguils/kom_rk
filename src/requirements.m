@@ -13,13 +13,6 @@ function Reqr = requirements(RunArg, Stm)
 %     YawEvo   (struct) -- Evolution of attitude and RW currents in yaw
 %     Sizing   (struct) -- Reaction wheel sizing
 
-% TODO:
-% - Etimation of the wheels sizing
-
-% Unpack relevant execution parameters
-LocalRunArg = {RunArg.opts};
-opts = LocalRunArg{:};
-
 % 1. Time evolution laws
 
 Reqr.RollEvo  = evolution_from_rest(Stm.Roll, Stm.Falcon.Ixx);
@@ -39,7 +32,7 @@ Reqr.Sizing = wheel_sizing(Stm, Reqr);
 
 % 4. Requirements plot
 
-if contains(opts, 'p')
+if contains(RunArg.opts, 'p')
 	plot_requirements(Reqr);
 end
 
@@ -125,16 +118,16 @@ function Sizing = wheel_sizing(Stm, Reqr, varargin)
 %   rwSpeedMargin (double) -- default: 20%
 %     Percentage decrease of the maximum rotation speed allowed for the
 %     reaction wheels.
-%   heightGuess (double) -- default: 0.5m
+%   height (double) -- default: 0.1m
 %     Value of the disk height that is chosen a priori for the reaction
 %     wheels.
 
 % Set default value for optional inputs
-optargs = {20, 0.5};
+optargs = {20, 0.1};
 % Overwrite default value of optional inputs
 optargs(1:numel(varargin)) = varargin;
 % Place optional args in memorable variable names
-[rwSpeedMargin, heightGuess] = optargs{:};
+[rwSpeedMargin, height] = optargs{:};
 
 % Find the maximum angular momentum that the wheel must provide
 % Sadly, Matlab don't offer a `fmaxbnd` function
@@ -152,13 +145,30 @@ IrwYaw   = -invMaxMomentumYaw   / (4*designSpeed*cos(Stm.RW.beta));
 Irw = max([IrwRoll, IrwPitch, IrwYaw]);
 
 % Radius needed to reach this minimal moment of inertia
-radius = (2*Irw/(pi*Stm.RW.density*heightGuess))^(1/4);
+radius = (2*Irw/(pi*Stm.RW.density*height))^(1/4);
+
+% Mass of one reaction wheel.
+mass = Stm.RW.density * height * pi*radius^2;
+
+% Assert that the hardware limitations are respected.
+% Ideally, the RW mass should be as low as possible, or at least respect
+% the maximum ACS mass requirement.
+% -> Lower the guessed height as much as possible, while keeping a
+%    reasonable radius, so that the RW pyramid actually fits into the
+%    spacecraft.
+if mass > 4*Stm.Acs.maxMass
+	warning("Reaction wheels are too heavy");
+end
+if (2*radius*sin(Stm.RW.beta)+height*cos(Stm.RW.beta)) > Stm.Falcon.height
+	warning("RW setup does not fit inside the spacecraft");
+end
 
 % Build return data structure
 Sizing.designSpeed    = designSpeed;
 Sizing.designSpeedRpm = designSpeed * 30/pi;
 Sizing.radius         = radius;
-Sizing.height         = heightGuess;
+Sizing.height         = height;
+Sizing.mass           = mass;
 Sizing.Irw            = Irw;
 end
 
@@ -186,7 +196,6 @@ plot(Reqr.YawEvo.tSample,   Reqr.YawEvo.torque(Reqr.YawEvo.tSample));
 grid;
 xlabel("Time (s)");
 ylabel("Torque (N*m)");
-% legend('Roll', 'Pitch', 'Yaw');
 
 % Angular moments
 subplot(2, 2, 2);
@@ -197,7 +206,6 @@ plot(Reqr.YawEvo.tSample,   Reqr.YawEvo.momentum(Reqr.YawEvo.tSample));
 grid;
 xlabel("Time (s)");
 ylabel("Momentum (kg*m²/s)");
-% legend('Roll', 'Pitch', 'Yaw');
 
 % Rotation angles
 subplot(2, 2, 3);
@@ -208,7 +216,6 @@ plot(Reqr.YawEvo.tSample,   rad2deg(Reqr.YawEvo.angle(Reqr.YawEvo.tSample)));
 grid;
 xlabel("Time (s)");
 ylabel("Rotation angle (deg)");
-% legend('Roll', 'Pitch', 'Yaw');
 
 % Electrical current profile
 subplot(2, 2, 4);
@@ -219,7 +226,7 @@ plot(Reqr.YawEvo.tSample,   Reqr.YawEvo.current(Reqr.YawEvo.tSample));
 grid;
 xlabel("Time (s)");
 ylabel("Current (A)");
-% legend('Roll', 'Pitch', 'Yaw');
 
+legend('Roll', 'Pitch', 'Yaw', 'Location', 'northeast');
 hold off;
 end
