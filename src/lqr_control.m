@@ -1,4 +1,4 @@
-function Lqr = lqr_control(RunArg, Stm, SS)
+function Lqr = lqr_control(RunArg, Stm, Reqr, SS)
 % LQR_CONTROL  LQR attitude control system for the Millennium Falcon.
 %
 % Arguments:
@@ -10,12 +10,18 @@ function Lqr = lqr_control(RunArg, Stm, SS)
 %       'pitch' -> Run the pitch models
 %       'yaw'   -> Run the yaw models
 %   Stm    (struct) -- Project statement data
+%   Reqr   (struct) -- Requirements estimation
 %   SS     (struct) -- State-space representations
 % Return:
 %   Lqr.Roll, Lqr.Pitch, Lqr.Yaw (struct) -- LQR controllers, with fields:
-%     Q (array[double]) -- Q matrix: weight on the state vector.
-%     R (array[double]) -- R matrix: weight on the input vector.
-%     K (array[double]) -- K matrix: optimal proportional gain.
+%     Q        (2x2 double) -- weight on the state vector
+%     R        (double)     -- weight on the input vector
+%     K        (1x2 double) -- optimal proportional gain
+%     A_cl     (2x2 double) -- closed loop A matrix
+%     sys      (2x1 ss)     -- proportional gain, closed loop system
+%     refVec   (2x1 double) -- initial conditions of the system
+%     tSample  (1xN double) -- time sample for the step response
+%     response (1xN double) -- system response to a step
 
 % TODO:
 % - run selected simulink model by Runarg.selsim
@@ -32,10 +38,18 @@ Lqr.Roll  = lqr_system(SS.Roll,  Q_roll,  R_roll);
 Lqr.Pitch = lqr_system(SS.Pitch, Q_pitch, R_pitch);
 Lqr.Yaw   = lqr_system(SS.Yaw,   Q_yaw,   R_yaw);
 
-% 3. Plot the step responses
+% 3. Compute the step responses
+
+Lqr = compute_step_responses(Stm, Reqr, Lqr);
+
+% 4. Check the performance requirements
+
+check_reqr(Stm, Lqr);
+
+% 5. Plot the step responses
 
 if contains(RunArg.opts, 'p')
-	plot_step_responses(Stm, Lqr);
+	plot_step_responses(Lqr);
 end
 
 end
@@ -50,23 +64,21 @@ function [Q, R] = heuristic_QR(axis)
 
 switch axis
 	case 'roll'
-		Q = 1e15*diag([1, 1]);
-		R = 1;
+		Q = diag([1e10, 1]);
+		R = 1e-5;
 	case 'pitch'
-		Q = 1e18*diag([1, 1]);
-		R = 1;
+		Q = diag([1e10, 1]);
+		R = 10^(-5.8);
 	case 'yaw'
-		Q = 1e8*diag([1, 1]);
-		R = 1;
+		Q = diag([1e10, 1]);
+		R = 10^(-6.7);
 end
 end
 
 %% 2. LQR controller for the state-space systems
 
 function Lqr = lqr_system(SS_rot, Q, R)
-% LQR_system Return LQR controller for the given state-space system.
-%
-% Arguments:
+% LQR_SYSTEM Return LQR controller for the given state-space system.
 
 % Local aliases
 A = SS_rot.A;
@@ -90,26 +102,58 @@ Lqr.A_cl = A_cl;
 Lqr.sys  = sys;
 end
 
-%% 3. Plot the step responses
 
-function plot_step_responses(Stm, Lqr)
-% PLOT_STEP_RESPONSES  Plot the step responses of the LQR controllers.
+%% 3. Compute the step responses
+
+function Lqr = compute_step_responses(Stm, Reqr, Lqr)
+% COMPUTE_STEP_RESPONSES  Compute the step responses of the LQR controllers.
 
 % Reference rotation vectors
-refRoll  = [Stm.Roll.angle; 0];
-refPitch = [Stm.Pitch.angle; 0];
-refYaw   = [Stm.Pitch.angle; 0];  % TODO: change
+Lqr.Roll.refVec  = [Stm.Roll.angle;       0];
+Lqr.Pitch.refVec = [Stm.Pitch.angle;      0];
+Lqr.Yaw.refVec   = [Reqr.YawEvo.devAngle; 0];
 
 % Time samples for the plots
 t0 = 0;  % Initial time [s].
-tSampleRoll  = linspace(t0, 1.5*Stm.Roll.settlingTime);
-tSamplePitch = linspace(t0, 1.5*Stm.Pitch.settlingTime);
-tSampleYaw   = linspace(t0, 1.5*Stm.Pitch.settlingTime); % TODO: change
+Lqr.Roll.tSample  = linspace(t0, 1.75*Stm.Roll.settlingTime);
+Lqr.Pitch.tSample = linspace(t0, 2   *Stm.Pitch.settlingTime);
+Lqr.Yaw.tSample   = linspace(t0, 2.5 *Reqr.YawEvo.recovTime);
+% NOTE:
+% The weirds coeffs are just there to extend a bit the response after
+% the settling time, so that we better see the convergence on the step
+% plots.
 
 % Responses of the LQR controller
-[yRoll,  ~, ~] = initial(Lqr.Roll.sys,  refRoll,  tSampleRoll);
-[yPitch, ~, ~] = initial(Lqr.Pitch.sys, refPitch, tSamplePitch);
-[yYaw,   ~, ~] = initial(Lqr.Yaw.sys,   refYaw,   tSampleYaw);
+[Lqr.Roll.response,  ~, ~] = initial(Lqr.Roll.sys,  Lqr.Roll.refVec,  Lqr.Roll.tSample);
+[Lqr.Pitch.response, ~, ~] = initial(Lqr.Pitch.sys, Lqr.Pitch.refVec, Lqr.Pitch.tSample);
+[Lqr.Yaw.response,   ~, ~] = initial(Lqr.Yaw.sys,   Lqr.Yaw.refVec,   Lqr.Yaw.tSample);
+end
+
+%% 4. Check the performance requirements
+
+function check_reqr(Stm, Lqr)
+% CHECK_REQR  Check that the step responses meets the requirements.
+
+% Overshoot requirements
+if any(Lqr.Roll.response >= (1 + Stm.Roll.percentageOvershoot/100))
+	warning("Too much overshoot for LQR in Roll");
+end
+if any(Lqr.Pitch.response >= (1 + Stm.Pitch.percentageOvershoot/100))
+	warning("Too much overshoot for LQR in Roll");
+end
+
+% Settling time requirements
+%
+% It can be verified on the plotted graph.
+% TODO: implement that programatically
+
+end
+
+
+%% 5. Plot the step responses
+
+function plot_step_responses(Lqr)
+% PLOT_STEP_RESPONSES  Plot the step responses of the LQR controllers.
 
 % Instantiate a new figure object
 figure("WindowStyle", "docked");
@@ -117,9 +161,10 @@ title("Step responses of the LQR controllers");
 
 % Plot the step responses
 hold on;
-plot(tSampleRoll,  (1 -  yRoll(:, 1)/refRoll(1)));
-plot(tSamplePitch, (1 - yPitch(:, 1)/refPitch(1)));
-plot(tSampleYaw,   (1 - yYaw(:, 1)/refYaw(1)));
+plot(Lqr.Roll.tSample,  (1 -  Lqr.Roll.response(:, 1)/Lqr.Roll.refVec(1)));
+plot(Lqr.Pitch.tSample, (1 - Lqr.Pitch.response(:, 1)/Lqr.Pitch.refVec(1)));
+plot(Lqr.Yaw.tSample,   (1 -   Lqr.Yaw.response(:, 1)/Lqr.Yaw.refVec(1)));
+hold off;
 grid;
 xlabel("Time (s)");
 ylabel("Normalized rotation angle (deg)");

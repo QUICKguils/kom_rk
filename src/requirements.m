@@ -92,6 +92,8 @@ YawEvo.torque   = @(t) HitEvo.torque(t)   + RecovEvo.torque(t-HitEvo.duration);
 YawEvo.momentum = @(t) HitEvo.momentum(t) + RecovEvo.momentum(t-HitEvo.duration);
 YawEvo.angle    = @(t) HitEvo.angle(t)    + RecovEvo.angle(t-HitEvo.duration) ...
 	                 + HitDesc.angle * (t > HitEvo.duration) .* (t <= YawEvo.duration);
+YawEvo.devAngle  = HitDesc.angle;
+YawEvo.recovTime = RecovDesc.settlingTime;
 end
 
 %% 2. Electrical current estimates
