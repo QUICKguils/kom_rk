@@ -8,9 +8,10 @@ function Reqr = requirements(RunArg, Stm)
 %   Stm    (struct) -- Project statement data
 % Return:
 %   Reqr (struct) -- Requirements estimation, with fields:
-%     RollEvo  (struct) -- Evolution of torque, momentum and angle in roll
-%     PitchEvo (struct) -- Evolution of torque, momentum and angle in pitch
-%     YawEvo   (struct) -- Evolution of torque, momentum and angle in yaw
+%     RollEvo  (struct) -- Evolution of attitude and RW currents in roll
+%     PitchEvo (struct) -- Evolution of attitude and RW currents in pitch
+%     YawEvo   (struct) -- Evolution of attitude and RW currents in yaw
+%     Sizing   (struct) -- Reaction wheel sizing
 
 % TODO:
 % - Etimation of the wheels sizing
@@ -34,7 +35,7 @@ Reqr.YawEvo.current   = i_yaw;
 
 % 3. Reaction wheels sizing
 
-Reqr.RW = wheel_sizing();
+Reqr.Sizing = wheel_sizing(Stm, Reqr);
 
 % 4. Requirements plot
 
@@ -113,10 +114,52 @@ i_yaw   = @(t) Reqr.YawEvo.torque(t)   ./ (4*Stm.RW.torqueCst*cos(Stm.RW.beta));
 end
 
 %% 3. Reaction wheels sizing
-function Sizing = wheel_sizing()
-% WHEEL_SIZING  Propose a first sizing for the reaction wheels.
 
-Sizing.I = 1e3;
+function Sizing = wheel_sizing(Stm, Reqr, varargin)
+% WHEEL_SIZING  Propose a first sizing for the reaction wheels.
+%
+% This function assumes that the reaction wheel moments of inertia are
+% similar to that of a homogeneous disk.
+%
+% Optional arguments:
+%   rwSpeedMargin (double) -- default: 20%
+%     Percentage decrease of the maximum rotation speed allowed for the
+%     reaction wheels.
+%   heightGuess (double) -- default: 0.5m
+%     Value of the disk height that is chosen a priori for the reaction
+%     wheels.
+
+% Set default value for optional inputs
+optargs = {20, 0.5};
+% Overwrite default value of optional inputs
+optargs(1:numel(varargin)) = varargin;
+% Place optional args in memorable variable names
+[rwSpeedMargin, heightGuess] = optargs{:};
+
+% Find the maximum angular momentum that the wheel must provide
+% Sadly, Matlab don't offer a `fmaxbnd` function
+[~, invMaxMomentumRoll]  = fminbnd(@(t) -Reqr.RollEvo.momentum(t),  0, Reqr.RollEvo.duration);
+[~, invMaxMomentumPitch] = fminbnd(@(t) -Reqr.PitchEvo.momentum(t), 0, Reqr.PitchEvo.duration);
+[~, invMaxMomentumYaw]   = fminbnd(@(t) -Reqr.YawEvo.momentum(t),   0, Reqr.YawEvo.duration);
+
+% Apply the security factor to the wheel maximum rotation speed
+designSpeed = (1 - rwSpeedMargin/100) * Stm.RW.maxSpeed;
+
+% Minimal moment of inertia required for the RW
+IrwRoll  = -invMaxMomentumRoll  / (2*designSpeed*sin(Stm.RW.beta));
+IrwPitch = -invMaxMomentumPitch / (2*designSpeed*sin(Stm.RW.beta));
+IrwYaw   = -invMaxMomentumYaw   / (4*designSpeed*cos(Stm.RW.beta));
+Irw = max([IrwRoll, IrwPitch, IrwYaw]);
+
+% Radius needed to reach this minimal moment of inertia
+radius = (2*Irw/(pi*Stm.RW.density*heightGuess))^(1/4);
+
+% Build return data structure
+Sizing.designSpeed    = designSpeed;
+Sizing.designSpeedRpm = designSpeed * 30/pi;
+Sizing.radius         = radius;
+Sizing.height         = heightGuess;
+Sizing.Irw            = Irw;
 end
 
 %% 4. Requirements plot
@@ -133,10 +176,10 @@ Reqr.YawEvo.tSample   = linspace(0, Reqr.YawEvo.duration,   nSample);
 % Instantiate a new figure object
 figure("WindowStyle", "docked");
 title("Time evolutions that satisfy the requirements");
-hold on;
 
 % Torques
 subplot(2, 2, 1);
+hold on;
 plot(Reqr.RollEvo.tSample,  Reqr.RollEvo.torque(Reqr.RollEvo.tSample));
 plot(Reqr.PitchEvo.tSample, Reqr.PitchEvo.torque(Reqr.PitchEvo.tSample));
 plot(Reqr.YawEvo.tSample,   Reqr.YawEvo.torque(Reqr.YawEvo.tSample));
