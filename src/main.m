@@ -64,7 +64,7 @@ SS = ss_model(Stm, Reqr);
 Lqr = lqr_control(RunArg, Stm, Reqr, SS);
 
 % 4. PID control
-Pid = pid_control(RunArg, Stm, SS);
+Pid = pid_control(RunArg, Stm, Reqr, SS);
 
 %% Save generated data
 
