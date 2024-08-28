@@ -1,5 +1,5 @@
 function Pid = pid_control(RunArg, Stm, Reqr, SS)
-% PID_CONTROL  PID attitude control system for the Millennium Falcon.
+% PID_CONTROL  PID attitude control system for the Kom'rk.
 %
 % Arguments:
 %   RunArg (struct) -- Code execution parameters, with field:

@@ -27,7 +27,7 @@ if ~isfolder(resDirectory)
 	mkdir(resDirectory);
 end
 
-% Add resursively sub-directories in the Matlab path
+% Add resursively sub-directories in the MATLAB path
 addpath(genpath(fullfile(rootDirectory, "src")));
 
 %% Options setting

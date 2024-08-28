@@ -15,9 +15,9 @@ function Reqr = requirements(RunArg, Stm)
 
 % 1. Time evolution laws
 
-Reqr.RollEvo  = evolution_from_rest(Stm.Roll, Stm.Falcon.Ixx);
-Reqr.PitchEvo = evolution_from_rest(Stm.Pitch, Stm.Falcon.Iyy);
-Reqr.YawEvo   = evolution_for_yaw(Stm.Yaw, Stm.Falcon.Izz);
+Reqr.RollEvo  = evolution_from_rest(Stm.Roll, Stm.Komrk.Ixx);
+Reqr.PitchEvo = evolution_from_rest(Stm.Pitch, Stm.Komrk.Iyy);
+Reqr.YawEvo   = evolution_for_yaw(Stm.Yaw, Stm.Komrk.Izz);
 
 % 2. Electrical current estimates
 
@@ -161,9 +161,11 @@ mass = Stm.RW.density * height * pi*radius^2;
 if mass > 4*Stm.Acs.maxMass
 	warning("Reaction wheels are too heavy");
 end
-if (2*radius*sin(Stm.RW.beta)+height*cos(Stm.RW.beta)) > Stm.Falcon.height
-	warning("RW setup does not fit inside the spacecraft");
-end
+
+% TODO: Mod this for komrk
+% if (2*radius*sin(Stm.RW.beta)+height*cos(Stm.RW.beta)) > Stm.Komrk.height
+% 	warning("RW setup does not fit inside the spacecraft");
+% end
 
 % Build return data structure
 Sizing.designSpeed    = designSpeed;

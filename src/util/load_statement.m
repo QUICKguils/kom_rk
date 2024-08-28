@@ -4,20 +4,17 @@ function Stm = load_statement
 % This function returns a structure that contains the data provided by
 % the statement, which are used throughout the project.
 
-% Millennium Falcon
-Stm.Falcon.diameter = 20;     % Diameter [m]
-Stm.Falcon.radius   = 10;     % Radius [m]
-Stm.Falcon.height   = 8;      % Height [m]
-Stm.Falcon.mass     = 100e3;  % Mass (without control system) [kg]
-[Ixx, Iyy, Izz]     = spacecraft_inertia(Stm.Falcon);  % See: src/utils/spacecraft_inertia.m
-Stm.Falcon.Ixx      = Ixx;    % Inertia along the roll  axis [kg*m²]
-Stm.Falcon.Iyy      = Iyy;    % Inertia along the pitch axis [kg*m²]
-Stm.Falcon.Izz      = Izz;    % Inertia along the yaw   axis [kg*m²]
+
+% Kom'rk spacecraft
+Stm.Komrk.mass = 30e3;  % Mass (without control system) [kg]
+Stm.Komrk.Ixx  = 1e6;   % Inertia along the roll axis [kg*m²]
+Stm.Komrk.Iyy  = 1e6;   % Inertia along the pitch axis [kg*m²]
+Stm.Komrk.Izz  = 2e6;   % Inertia along the yaw axis [kg*m²]
 
 % Requirement on the control system
-Stm.Acs.maxMass    = 10e3;   % Max. mass [kg]
-Stm.Acs.maxPower   = 1e6;    % Max. input power [W]
-Stm.Acs.maxVoltage = 100e3;  % Max. applied voltage [V]
+Stm.Acs.maxMass    = 5e3;     % Maximum mass [kg]
+Stm.Acs.maxPower   = 0.75e6;  % Maximum input power [W]
+Stm.Acs.maxVoltage = 100e3;   % Maximum applied voltage [V]
 
 % Reaction wheels
 Stm.RW.beta      = deg2rad(63.4);  % Elevation angle of the pyramid [rad]
@@ -33,12 +30,15 @@ Stm.RW.density   = 8e3;            % Density of steel composing the wheels [kg/m
 % Performance requirements
 Stm.Roll.angle                = deg2rad(90);  % Roll rotation angle [rad]
 Stm.Roll.percentageOvershoot  = 20;           % Percentage overshoot
-Stm.Roll.settlingTime         = 10;           % Settling time [s]
+Stm.Roll.settlingTime         = 5;            % Settling time [s]
 Stm.Roll.settlingRtol         = 0.1;          % Settling relative tolerance
 Stm.Pitch.angle               = deg2rad(30);  % Pitch rotation angle [rad]
 Stm.Pitch.percentageOvershoot = 5;            % Percentage overshoot
-Stm.Pitch.settlingTime        = 5;            % Settling time [s]
+Stm.Pitch.settlingTime        = 2.5;          % Settling time [s]
+Stm.Pitch.errorAngle          = deg2rad(2);   % Settling error angle [rad]
 Stm.Yaw.recoveryTime          = 5;            % Laser hit recovery time [s]
 Stm.Yaw.laserTorque           = 4000;         % Torque induced by laser hit [N/m]
 Stm.Yaw.laserTime             = 0.5;          % Duration of laser hit [s]
+Stm.Yaw.settlingRtol          = 0.05;         % Settling relative tolerance
+
 end

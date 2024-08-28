@@ -29,7 +29,7 @@ function [A, B, C, D] = ss_roll(Stm, Reqr)
 % state-space representation (see lesson 2).
 
 % Local aliases
-Ixx = Stm.Falcon.Ixx;
+Ixx = Stm.Komrk.Ixx;
 RW  = Stm.RW;
 Irw = Reqr.Sizing.Irw;
 
@@ -55,7 +55,7 @@ function [A, B, C, D] = ss_pitch(Stm, Reqr)
 % state-space representation (see lesson 2).
 
 % Local aliases
-Iyy = Stm.Falcon.Iyy;
+Iyy = Stm.Komrk.Iyy;
 RW  = Stm.RW;
 Irw = Reqr.Sizing.Irw;
 
@@ -66,7 +66,7 @@ A = [
 ];
 B = [
 	0;
-	sin(RW.beta)*RW.torqueCst/(Iyy*RW.elecR) 
+	sin(RW.beta)*RW.torqueCst/(Iyy*RW.elecR)
 ];
 
 % C and D: output y(t) is the state vector x(t)
@@ -81,7 +81,7 @@ function [A, B, C, D] = ss_yaw(Stm, Reqr)
 % state-space representation (see lesson 2).
 
 % Local aliases
-Izz = Stm.Falcon.Izz;
+Izz = Stm.Komrk.Izz;
 RW  = Stm.RW;
 Irw = Reqr.Sizing.Irw;
 
@@ -92,7 +92,7 @@ A = [
 ];
 B = [
 	0;
-	cos(RW.beta)*RW.torqueCst/(Izz*RW.elecR) 
+	cos(RW.beta)*RW.torqueCst/(Izz*RW.elecR)
 ];
 
 % C and D: output y(t) is the state vector x(t)

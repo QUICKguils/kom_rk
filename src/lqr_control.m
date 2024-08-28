@@ -1,5 +1,5 @@
 function Lqr = lqr_control(RunArg, Stm, Reqr, SS)
-% LQR_CONTROL  LQR attitude control system for the Millennium Falcon.
+% LQR_CONTROL  LQR attitude control system for the Kom'rk.
 %
 % Arguments:
 %   RunArg (struct) -- Code execution parameters, with field:
@@ -102,7 +102,6 @@ Lqr.A_cl = A_cl;
 Lqr.sys  = sys;
 end
 
-
 %% 3. Compute the step responses
 
 function Lqr = compute_step_responses(Stm, Reqr, Lqr)
@@ -146,9 +145,7 @@ end
 %
 % It can be verified on the plotted graph.
 % TODO: implement that programatically
-
 end
-
 
 %% 5. Plot the step responses
 
@@ -167,6 +164,6 @@ plot(Lqr.Yaw.tSample,   (1 -   Lqr.Yaw.response(:, 1)/Lqr.Yaw.refVec(1)));
 hold off;
 grid;
 xlabel("Time (s)");
-ylabel("Normalized rotation angle (deg)");
+ylabel("Normalized rotation angle");
 legend('Roll', 'Pitch', 'Yaw', 'location', 'southeast');
 end

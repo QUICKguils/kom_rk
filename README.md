@@ -1,7 +1,8 @@
-# Spacecraft Control Project
+# Kom'rk ACS design
 
-This repository holds all the code written for the project carried out as part
-of the Spacecraft Control course (AERO0036), academic year 2023-2024.
+This repository holds all the code written for the second session project
+carried out as part of the Spacecraft Control course (AERO0036), academic year
+2023-2024.
 
 ## Basic usage
 
@@ -10,10 +11,10 @@ file:
 ```matlab
 run src\main.m
 ```
-The execution of this main function add all the project files to the matlab
-path, for the current matlab session. Assuming that the top level directory path
+The execution of this main function add all the project files to the MATLAB
+path, for the current MATLAB session. Assuming that the top level directory path
 is called `rootDir`, it is still possible to add the project files manually to
-the matlab path:
+the MATLAB path:
 ```matlab
 addpath(genpath(rootDir));
 ```
