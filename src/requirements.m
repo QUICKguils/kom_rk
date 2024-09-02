@@ -120,12 +120,12 @@ function Sizing = wheel_sizing(Stm, Reqr, varargin)
 %   rwSpeedMargin (double) -- default: 20%
 %     Percentage decrease of the maximum rotation speed allowed for the
 %     reaction wheels.
-%   height (double) -- default: 0.1m
+%   height (double) -- default: 5 cm
 %     Value of the disk height that is chosen a priori for the reaction
 %     wheels.
 
 % Set default value for optional inputs
-optargs = {20, 0.1};
+optargs = {20, 0.05};
 % Overwrite default value of optional inputs
 optargs(1:numel(varargin)) = varargin;
 % Place optional args in memorable variable names
@@ -158,11 +158,11 @@ mass = Stm.RW.density * height * pi*radius^2;
 % -> Lower the guessed height as much as possible, while keeping a
 %    reasonable radius, so that the RW pyramid actually fits into the
 %    spacecraft.
-if mass > 4*Stm.Acs.maxMass
+if 4*mass > Stm.Acs.maxMass
 	warning("Reaction wheels are too heavy");
 end
 
-% TODO: Mod this for komrk
+% TODO: need to know the height of the Kom'rk spacecraft
 % if (2*radius*sin(Stm.RW.beta)+height*cos(Stm.RW.beta)) > Stm.Komrk.height
 % 	warning("RW setup does not fit inside the spacecraft");
 % end

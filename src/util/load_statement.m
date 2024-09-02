@@ -6,10 +6,12 @@ function Stm = load_statement
 
 
 % Kom'rk spacecraft
-Stm.Komrk.mass = 30e3;  % Mass (without control system) [kg]
-Stm.Komrk.Ixx  = 1e6;   % Inertia along the roll axis [kg*m²]
-Stm.Komrk.Iyy  = 1e6;   % Inertia along the pitch axis [kg*m²]
-Stm.Komrk.Izz  = 2e6;   % Inertia along the yaw axis [kg*m²]
+Stm.Komrk.length = 68;    % Length along the roll axis [m]
+Stm.Komrk.span   = 52;    % Length along the pitch axis [m]
+Stm.Komrk.mass   = 30e3;  % Mass (without control system) [kg]
+Stm.Komrk.Ixx    = 1e6;   % Inertia along the roll axis [kg*m²]
+Stm.Komrk.Iyy    = 1e6;   % Inertia along the pitch axis [kg*m²]
+Stm.Komrk.Izz    = 2e6;   % Inertia along the yaw axis [kg*m²]
 
 % Requirement on the control system
 Stm.Acs.maxMass    = 5e3;     % Maximum mass [kg]
@@ -22,23 +24,23 @@ Stm.RW.maxSpeed  = 7000 * pi/30;   % Max. angular speed [rad/s]
 Stm.RW.elecR     = 50;             % Electrical resistance [ohm]
 Stm.RW.torqueCst = 1;              % Motor torque constant [N*m/A]
 Stm.RW.damping   = 1e-4;           % Damping factor [N*m*s]
-Stm.RW.density   = 8e3;            % Density of steel composing the wheels [kg/m³]
+Stm.RW.density   = 8e3;            % Density of wheels material (steel) [kg/m³]
 
 % Thrusters
 % TODO: add thrusters statement data if we need to use them
 
 % Performance requirements
-Stm.Roll.angle                = deg2rad(90);  % Roll rotation angle [rad]
-Stm.Roll.percentageOvershoot  = 20;           % Percentage overshoot
-Stm.Roll.settlingTime         = 5;            % Settling time [s]
-Stm.Roll.settlingRtol         = 0.1;          % Settling relative tolerance
-Stm.Pitch.angle               = deg2rad(30);  % Pitch rotation angle [rad]
-Stm.Pitch.percentageOvershoot = 5;            % Percentage overshoot
-Stm.Pitch.settlingTime        = 2.5;          % Settling time [s]
-Stm.Pitch.errorAngle          = deg2rad(2);   % Settling error angle [rad]
-Stm.Yaw.recoveryTime          = 5;            % Laser hit recovery time [s]
-Stm.Yaw.laserTorque           = 4000;         % Torque induced by laser hit [N/m]
-Stm.Yaw.laserTime             = 0.5;          % Duration of laser hit [s]
-Stm.Yaw.settlingRtol          = 0.05;         % Settling relative tolerance
+Stm.Roll.angle          = deg2rad(90);  % Roll rotation angle [rad]
+Stm.Roll.maxOvershoot   = 0.2;          % Maximum overshoot
+Stm.Roll.settlingTime   = 5;            % Settling time [s]
+Stm.Roll.settlingRtol   = 0.1;          % Settling relative tolerance
+Stm.Pitch.angle         = deg2rad(30);  % Pitch rotation angle [rad]
+Stm.Pitch.maxOvershoot  = 0.05;         % Maximum overshoot
+Stm.Pitch.settlingTime  = 2.5;          % Settling time [s]
+Stm.Pitch.settlingAngle = deg2rad(2);   % Settling error angle [rad]
+Stm.Yaw.recoveryTime    = 5;            % Laser hit recovery time [s]
+Stm.Yaw.laserTorque     = 4000;         % Torque induced by laser hit [N/m]
+Stm.Yaw.laserTime       = 0.5;          % Duration of laser hit [s]
+Stm.Yaw.settlingRtol    = 0.05;         % Settling relative tolerance
 
 end

@@ -134,10 +134,10 @@ function check_reqr(Stm, Lqr)
 % CHECK_REQR  Check that the step responses meets the requirements.
 
 % Overshoot requirements
-if any(Lqr.Roll.response >= (1 + Stm.Roll.percentageOvershoot/100))
+if any(Lqr.Roll.response >= (1 + Stm.Roll.maxOvershoot))
 	warning("Too much overshoot for LQR in Roll");
 end
-if any(Lqr.Pitch.response >= (1 + Stm.Pitch.percentageOvershoot/100))
+if any(Lqr.Pitch.response >= (1 + Stm.Pitch.maxOvershoot))
 	warning("Too much overshoot for LQR in Roll");
 end
 
