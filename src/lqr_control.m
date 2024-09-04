@@ -107,19 +107,37 @@ Lqr.Pitch.timeSample = linspace(t0, 2*Stm.Pitch.settlingTime);
 Lqr.Yaw.timeSample   = linspace(t0, 2*Reqr.YawEvo.recovTime);
 
 % Responses of the LQR controller
-% NOTE: 
+%
+% The solution is firstly obtained by considering the full state
+% feedback system (i.e., where the reference signal is null) and
+% imposing the target state as initial condition of the system. For roll
+% and pitch, the response is then translated and flipped so that it
+% corresponds to the step response of the system to the target state.
 
-rollInitialState  = [Stm.Roll.angle;       0];
-pitchInitialState = [Stm.Pitch.angle;      0];
-yawInitialState   = [Reqr.YawEvo.devAngle; 0];
+Lqr.Roll.targetState  = [Stm.Roll.angle;       0];
+Lqr.Pitch.targetState = [Stm.Pitch.angle;      0];
+Lqr.Yaw.initialState  = [Reqr.YawEvo.devAngle; 0];
 
-[Lqr.Roll.response,  ~, ~] = initial(Lqr.Roll.sys_MIMO,  rollInitialState,  Lqr.Roll.timeSample);
-[Lqr.Pitch.response, ~, ~] = initial(Lqr.Pitch.sys_MIMO, pitchInitialState, Lqr.Pitch.timeSample);
-[Lqr.Yaw.response,   ~, ~] = initial(Lqr.Yaw.sys_MIMO,   yawInitialState,   Lqr.Yaw.timeSample);
+[rollICResponse,  ~, ~] = initial(Lqr.Roll.sys_MIMO,  Lqr.Roll.targetState,  Lqr.Roll.timeSample);
+[pitchICResponse, ~, ~] = initial(Lqr.Pitch.sys_MIMO, Lqr.Pitch.targetState, Lqr.Pitch.timeSample);
+[yawICResponse,   ~, ~] = initial(Lqr.Yaw.sys_MIMO,   Lqr.Yaw.initialState,  Lqr.Yaw.timeSample);
 
-Lqr.Roll.rotSample  = rollInitialState(1)  - Lqr.Roll.response(:, 1);
-Lqr.Pitch.rotSample = pitchInitialState(1) - Lqr.Pitch.response(:, 1);
-Lqr.Yaw.rotSample   = Lqr.Yaw.response(:, 1);
+Lqr.Roll.rotAngle  = Lqr.Roll.targetState(1) - rollICResponse(:, 1);
+Lqr.Roll.rotRate   = Lqr.Roll.targetState(2) - rollICResponse(:, 2);
+Lqr.Pitch.rotAngle = Lqr.Pitch.targetState(1) - pitchICResponse(:, 1);
+Lqr.Pitch.rotRate  = Lqr.Pitch.targetState(2) - pitchICResponse(:, 2);
+Lqr.Yaw.rotAngle   = yawICResponse(:, 1);
+Lqr.Yaw.rotRate    = yawICResponse(:, 2);
+
+% Armature voltages (control inputs): u = -K*x
+%
+% NOTE:
+% - For roll and pitch, take the opposite, as the signal has been flipped.
+% - Don't forget to divide per number of activated wheels, to get
+%   voltage across ONE wheel only.
+Lqr.Roll.voltage  = (+Lqr.Roll.K  * rollICResponse')'/2;
+Lqr.Pitch.voltage = (+Lqr.Pitch.K * pitchICResponse')'/2;
+Lqr.Yaw.voltage   = (-Lqr.Yaw.K   * yawICResponse')'/4;
 end
 
 %% 4. Check the performance requirements
@@ -130,13 +148,13 @@ function check_reqr(Stm, Reqr, Lqr)
 % Load locally the requirements bounds
 Bounds = reqr_bounds(Stm, Reqr);
 
-if ~Bounds.Roll.check(Lqr.Roll.timeSample, Lqr.Roll.rotSample)
+if ~Bounds.Roll.check(Lqr.Roll.timeSample, Lqr.Roll.rotAngle)
 	warning("Roll step response does not meet the performance requirements.");
 end
-if ~Bounds.Pitch.check(Lqr.Pitch.timeSample, Lqr.Pitch.rotSample)
+if ~Bounds.Pitch.check(Lqr.Pitch.timeSample, Lqr.Pitch.rotAngle)
 	warning("Pitch step response does not meet the performance requirements.");
 end
-if ~Bounds.Yaw.check(Lqr.Yaw.timeSample, Lqr.Yaw.rotSample)
+if ~Bounds.Yaw.check(Lqr.Yaw.timeSample, Lqr.Yaw.rotAngle)
 	warning("Yaw step response does not meet the performance requirements.");
 end
 end
@@ -155,7 +173,7 @@ sgtitle("Rotation and voltage profiles of the LQR controllers");
 
 % Plot the step responses
 subplot(2, 3, 1); hold on;
-plot(Lqr.Roll.timeSample, rad2deg(Lqr.Roll.rotSample));
+plot(Lqr.Roll.timeSample, rad2deg(Lqr.Roll.rotAngle));
 plot(Bounds.Roll.Upper.time, rad2deg(Bounds.Roll.Upper.angle), 'LineWidth', 1, 'Color', 'r');
 plot(Bounds.Roll.Lower.time, rad2deg(Bounds.Roll.Lower.angle), 'LineWidth', 1, 'Color', 'r');
 hold off; grid;
@@ -164,7 +182,7 @@ xlabel("Time (s)");
 ylabel("Angle (°)");
 
 subplot(2, 3, 2); hold on;
-plot(Lqr.Pitch.timeSample, rad2deg(Lqr.Pitch.rotSample));
+plot(Lqr.Pitch.timeSample, rad2deg(Lqr.Pitch.rotAngle));
 plot(Bounds.Pitch.Upper.time, rad2deg(Bounds.Pitch.Upper.angle), 'LineWidth', 1, 'Color', 'r');
 plot(Bounds.Pitch.Lower.time, rad2deg(Bounds.Pitch.Lower.angle), 'LineWidth', 1, 'Color', 'r');
 hold off; grid;
@@ -173,7 +191,7 @@ xlabel("Time (s)");
 ylabel("Angle (°)");
 
 subplot(2, 3, 3); hold on;
-plot(Lqr.Yaw.timeSample, rad2deg(Lqr.Yaw.rotSample));
+plot(Lqr.Yaw.timeSample, rad2deg(Lqr.Yaw.rotAngle));
 plot(Bounds.Yaw.Upper.time, rad2deg(Bounds.Yaw.Upper.angle), 'LineWidth', 1, 'Color', 'r');
 plot(Bounds.Yaw.Lower.time, rad2deg(Bounds.Yaw.Lower.angle), 'LineWidth', 1, 'Color', 'r');
 hold off; grid;
@@ -183,19 +201,19 @@ ylabel("Angle (°)");
 
 % Plot the voltage inputs
 subplot(2, 3, 4); hold on;
-plot(Lqr.Roll.timeSample, Lqr.Roll.K * Lqr.Roll.response');
+plot(Lqr.Roll.timeSample, Lqr.Roll.voltage);
 hold off; grid;
 xlabel("Time (s)");
 ylabel("Voltage (V)");
 
 subplot(2, 3, 5); hold on;
-plot(Lqr.Pitch.timeSample, Lqr.Pitch.K * Lqr.Pitch.response');
+plot(Lqr.Pitch.timeSample, Lqr.Pitch.voltage);
 hold off; grid;
 xlabel("Time (s)");
 ylabel("Voltage (V)");
 
 subplot(2, 3, 6); hold on;
-plot(Lqr.Yaw.timeSample, Lqr.Yaw.K * Lqr.Yaw.response');
+plot(Lqr.Yaw.timeSample, Lqr.Yaw.voltage);
 hold off; grid;
 xlabel("Time (s)");
 ylabel("Voltage (V)");
