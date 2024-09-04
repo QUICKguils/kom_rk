@@ -43,33 +43,25 @@ end
 
 %% 1. Heuristics for P, I and D terms
 
-function [P, I, D] = heuristic_PID(axis)
+function Pid = heuristic_PID()
 % HEURISTIC_PID  Store the heuristic values of P, D and I.
-%
-% Argument:
-%   axis ({'roll', 'pitch', 'yaw'}) -- select the s.s. system
 
-% TODO: find good PID values with the aid of sisotool
+		Pid.Roll.P = 1;
+		Pid.Roll.I = 1;
+		Pid.Roll.D = 1;
 
-switch axis
-	case 'roll'
-		P = 1;
-		I = 1;
-		D = 1;
-	case 'pitch'
-		P = 1;
-		I = 1;
-		D = 1;
-	case 'yaw'
-		P = 1;
-		I = 1;
-		D = 1;
-end
+		Pid.Pitch.P = 1;
+		Pid.Pitch.I = 1;
+		Pid.Pitch.D = 1;
+
+		Pid.Yaw.P = 1;
+		Pid.Yaw.I = 1;
+		Pid.Yaw.D = 1;
 end
 
 %% 2. PID controller for the state-space systems
 
-function Pid = pid_system(SS_rot, P, I, D)
+function Pid = pid_system(SS_rot, Pid_rot)
 % PID_SYSTEM Return PID controller for the given state-space system.
 
 end
@@ -79,65 +71,85 @@ end
 function Pid = compute_step_responses(Stm, Reqr, Pid)
 % COMPUTE_STEP_RESPONSES  Compute the step responses of the PID controllers.
 
-% Reference rotation vectors
-Pid.Roll.refVec  = [Stm.Roll.angle;       0];
-Pid.Pitch.refVec = [Stm.Pitch.angle;      0];
-Pid.Yaw.refVec   = [Reqr.YawEvo.devAngle; 0];
-
 % Time samples for the plots
 t0 = 0;  % Initial time [s].
-Pid.Roll.tSample  = linspace(t0, 1.75*Stm.Roll.settlingTime);
-Pid.Pitch.tSample = linspace(t0, 2   *Stm.Pitch.settlingTime);
-Pid.Yaw.tSample   = linspace(t0, 2.5 *Reqr.YawEvo.recovTime);
-% NOTE:
-% The weirds coeffs are just there to extend a bit the response after
-% the settling time, so that we better see the convergence on the step
-% plots.
+Pid.Roll.tSample  = linspace(t0, 2*Stm.Roll.settlingTime);
+Pid.Pitch.tSample = linspace(t0, 2*Stm.Pitch.settlingTime);
+Pid.Yaw.tSample   = linspace(t0, 2*Reqr.YawEvo.recovTime);
 
 % Responses of the LQR controller
-[Pid.Roll.response,  ~, ~] = initial(Pid.Roll.sys,  Pid.Roll.refVec,  Pid.Roll.tSample);
-[Pid.Pitch.response, ~, ~] = initial(Pid.Pitch.sys, Pid.Pitch.refVec, Pid.Pitch.tSample);
-[Pid.Yaw.response,   ~, ~] = initial(Pid.Yaw.sys,   Pid.Yaw.refVec,   Pid.Yaw.tSample);
+% NOTE: 
+
+rollInitialState  = [Stm.Roll.angle;       0];
+pitchInitialState = [Stm.Pitch.angle;      0];
+yawInitialState   = [Reqr.YawEvo.devAngle; 0];
+
+[rollResponse,  ~, ~] = initial(Lqr.Roll.sys,  rollInitialState,  Lqr.Roll.tSample);
+[pitchResponse, ~, ~] = initial(Lqr.Pitch.sys, pitchInitialState, Lqr.Pitch.tSample);
+[yawResponse,   ~, ~] = initial(Lqr.Yaw.sys,   yawInitialState,   Lqr.Yaw.tSample);
+
+Pid.Roll.response  = rollInitialState(1)  - rollResponse(:, 1);
+Pid.Pitch.response = pitchInitialState(1) - pitchResponse(:, 1);
+Pid.Yaw.response   = yawResponse(:, 1);
 end
+
 
 %% 4. Check the performance requirements
 
-function check_reqr(Stm, Pid)
+function check_reqr(Stm, Reqr, Pid)
 % CHECK_REQR  Check that the step responses meets the requirements.
 
-% Overshoot requirements
-if any(Pid.Roll.response >= (1 + Stm.Roll.percentageOvershoot/100))
-	warning("Too much overshoot for LQR in Roll");
-end
-if any(Pid.Pitch.response >= (1 + Stm.Pitch.percentageOvershoot/100))
-	warning("Too much overshoot for LQR in Roll");
-end
+% Load locally the requirements bounds
+Bounds = reqr_bounds(Stm, Reqr);
 
-% Settling time requirements
-%
-% It can be verified on the plotted graph.
-% TODO: implement that programatically
-
+if ~Bounds.Roll.check(Pid.Roll.tSample, Pid.Roll.response)
+	warning("Roll step response does not meet the performance requirements.");
 end
-
+if ~Bounds.Pitch.check(Pid.Pitch.tSample, Pid.Pitch.response)
+	warning("Pitch step response does not meet the performance requirements.");
+end
+if ~Bounds.Yaw.check(Pid.Yaw.tSample, Pid.Yaw.response)
+	warning("Yaw step response does not meet the performance requirements.");
+end
+end
 
 %% 5. Plot the step responses
 
-function plot_step_responses(Pid)
-% PLOT_STEP_RESPONSES  Plot the step responses of the PID controllers.
+function plot_step_responses(Stm, Reqr, Lqr)
+% PLOT_STEP_RESPONSES  Plot the step responses of the LQR controllers.
+
+% Load locally the requirements bounds
+Bounds = reqr_bounds(Stm, Reqr);
 
 % Instantiate a new figure object
 figure("WindowStyle", "docked");
-title("Step responses of the LQR controllers");
+sgtitle("Step responses of the LQR controllers");
 
 % Plot the step responses
-hold on;
-plot(Pid.Roll.tSample,  (1 -  Pid.Roll.response(:, 1)/Pid.Roll.refVec(1)));
-plot(Pid.Pitch.tSample, (1 - Pid.Pitch.response(:, 1)/Pid.Pitch.refVec(1)));
-plot(Pid.Yaw.tSample,   (1 -   Pid.Yaw.response(:, 1)/Pid.Yaw.refVec(1)));
-hold off;
-grid;
+subplot(1, 3, 1); hold on;
+plot(Lqr.Roll.tSample, rad2deg(Lqr.Roll.response));
+plot(Bounds.Roll.Upper.time, rad2deg(Bounds.Roll.Upper.angle), 'LineWidth', 1, 'Color', 'r');
+plot(Bounds.Roll.Lower.time, rad2deg(Bounds.Roll.Lower.angle), 'LineWidth', 1, 'Color', 'r');
+hold off; grid;
+title("Roll");
 xlabel("Time (s)");
-ylabel("Normalized rotation angle (deg)");
-legend('Roll', 'Pitch', 'Yaw', 'location', 'southeast');
+ylabel("Angle (°)");
+
+subplot(1, 3, 2); hold on;
+plot(Lqr.Pitch.tSample, rad2deg(Lqr.Pitch.response));
+plot(Bounds.Pitch.Upper.time, rad2deg(Bounds.Pitch.Upper.angle), 'LineWidth', 1, 'Color', 'r');
+plot(Bounds.Pitch.Lower.time, rad2deg(Bounds.Pitch.Lower.angle), 'LineWidth', 1, 'Color', 'r');
+hold off; grid;
+title("Pitch");
+xlabel("Time (s)");
+ylabel("Angle (°)");
+
+subplot(1, 3, 3); hold on;
+plot(Lqr.Yaw.tSample, rad2deg(Lqr.Yaw.response));
+plot(Bounds.Yaw.Upper.time, rad2deg(Bounds.Yaw.Upper.angle), 'LineWidth', 1, 'Color', 'r');
+plot(Bounds.Yaw.Lower.time, rad2deg(Bounds.Yaw.Lower.angle), 'LineWidth', 1, 'Color', 'r');
+hold off; grid;
+title("Yaw");
+xlabel("Time (s)");
+ylabel("Angle (°)");
 end

@@ -28,15 +28,13 @@ function Lqr = lqr_control(RunArg, Stm, Reqr, SS)
 
 % 1. Heuristics for Q and R matrices
 
-[Q_roll,  R_roll]  = heuristic_QR('roll');
-[Q_pitch, R_pitch] = heuristic_QR('pitch');
-[Q_yaw,   R_yaw]   = heuristic_QR('yaw');
+Lqr = heuristic_QR();
 
 % 2. LQR controller for the state-space systems
 
-Lqr.Roll  = lqr_system(SS.Roll,  Q_roll,  R_roll);
-Lqr.Pitch = lqr_system(SS.Pitch, Q_pitch, R_pitch);
-Lqr.Yaw   = lqr_system(SS.Yaw,   Q_yaw,   R_yaw);
+Lqr.Roll  = lqr_system(SS.Roll,  Lqr.Roll);
+Lqr.Pitch = lqr_system(SS.Pitch, Lqr.Pitch);
+Lqr.Yaw   = lqr_system(SS.Yaw,   Lqr.Yaw);
 
 % 3. Compute the step responses
 
@@ -44,62 +42,57 @@ Lqr = compute_step_responses(Stm, Reqr, Lqr);
 
 % 4. Check the performance requirements
 
-check_reqr(Stm, Lqr);
+check_reqr(Stm, Reqr, Lqr);
 
 % 5. Plot the step responses
 
 if contains(RunArg.opts, 'p')
-	plot_step_responses(Lqr);
+	plot_responses(Stm, Reqr, Lqr);
 end
 
 end
 
 %% 1. Heuristics for Q and R matrices
 
-function [Q, R] = heuristic_QR(axis)
+function Lqr = heuristic_QR()
 % HEURISTIC_QR  Store the heuristic values of Q and R.
-%
-% Argument:
-%   axis ({'roll', 'pitch', 'yaw'}) -- select the s.s. system
 
-switch axis
-	case 'roll'
-		Q = diag([1e10, 1]);
-		R = 1e-5;
-	case 'pitch'
-		Q = diag([1e10, 1]);
-		R = 10^(-5.8);
-	case 'yaw'
-		Q = diag([1e10, 1]);
-		R = 10^(-6.7);
-end
+	Lqr.Roll.Q  = diag([1e2, 1e2]);
+	Lqr.Roll.R  = 1e-13;
+	
+	Lqr.Pitch.Q = diag([1e3, 1e2]);
+	Lqr.Pitch.R = 1e-13;
+
+	Lqr.Yaw.Q   = diag([3e3, 2e3]);
+	Lqr.Yaw.R   = 1e-13;
 end
 
 %% 2. LQR controller for the state-space systems
 
-function Lqr = lqr_system(SS_rot, Q, R)
+function Lqr_rot = lqr_system(SS_rot, Lqr_rot)
 % LQR_SYSTEM Return LQR controller for the given state-space system.
 
 % Local aliases
 A = SS_rot.A;
 B = SS_rot.B;
-C = SS_rot.C;
-D = SS_rot.D;
+C_SISO = SS_rot.C_SISO;
+D_SISO = SS_rot.D_SISO;
+C_MIMO = SS_rot.C_MIMO;
+D_MIMO = SS_rot.D_MIMO;
 
 % Optimal gain
-K = lqr(A, B, Q, R);
+K = lqr(A, B, Lqr_rot.Q, Lqr_rot.R);
 
-% TODO: see if useful to compute A_cl and the close loop system
-% % Full state feedback system
+% Full state feedback system
 A_cl = A - B*K;
-sys  = ss(A_cl, B, C, D);
+sys_SISO = ss(A_cl, B, C_SISO, D_SISO);
+sys_MIMO = ss(A_cl, B, C_MIMO, D_MIMO);
 
 % Build the return data structure
-Lqr.Q    = Q;
-Lqr.R    = R;
-Lqr.K    = K;
-Lqr.A_cl = A_cl;
-Lqr.sys  = sys;
+Lqr_rot.K    = K;
+Lqr_rot.A_cl = A_cl;
+Lqr_rot.sys_SISO  = sys_SISO;
+Lqr_rot.sys_MIMO  = sys_MIMO;
 end
 
 %% 3. Compute the step responses
@@ -107,63 +100,103 @@ end
 function Lqr = compute_step_responses(Stm, Reqr, Lqr)
 % COMPUTE_STEP_RESPONSES  Compute the step responses of the LQR controllers.
 
-% Reference rotation vectors
-Lqr.Roll.refVec  = [Stm.Roll.angle;       0];
-Lqr.Pitch.refVec = [Stm.Pitch.angle;      0];
-Lqr.Yaw.refVec   = [Reqr.YawEvo.devAngle; 0];
-
 % Time samples for the plots
 t0 = 0;  % Initial time [s].
-Lqr.Roll.tSample  = linspace(t0, 1.75*Stm.Roll.settlingTime);
-Lqr.Pitch.tSample = linspace(t0, 2   *Stm.Pitch.settlingTime);
-Lqr.Yaw.tSample   = linspace(t0, 2.5 *Reqr.YawEvo.recovTime);
-% NOTE:
-% The weirds coeffs are just there to extend a bit the response after
-% the settling time, so that we better see the convergence on the step
-% plots.
+Lqr.Roll.timeSample  = linspace(t0, 2*Stm.Roll.settlingTime);
+Lqr.Pitch.timeSample = linspace(t0, 2*Stm.Pitch.settlingTime);
+Lqr.Yaw.timeSample   = linspace(t0, 2*Reqr.YawEvo.recovTime);
 
 % Responses of the LQR controller
-[Lqr.Roll.response,  ~, ~] = initial(Lqr.Roll.sys,  Lqr.Roll.refVec,  Lqr.Roll.tSample);
-[Lqr.Pitch.response, ~, ~] = initial(Lqr.Pitch.sys, Lqr.Pitch.refVec, Lqr.Pitch.tSample);
-[Lqr.Yaw.response,   ~, ~] = initial(Lqr.Yaw.sys,   Lqr.Yaw.refVec,   Lqr.Yaw.tSample);
+% NOTE: 
+
+rollInitialState  = [Stm.Roll.angle;       0];
+pitchInitialState = [Stm.Pitch.angle;      0];
+yawInitialState   = [Reqr.YawEvo.devAngle; 0];
+
+[Lqr.Roll.response,  ~, ~] = initial(Lqr.Roll.sys_MIMO,  rollInitialState,  Lqr.Roll.timeSample);
+[Lqr.Pitch.response, ~, ~] = initial(Lqr.Pitch.sys_MIMO, pitchInitialState, Lqr.Pitch.timeSample);
+[Lqr.Yaw.response,   ~, ~] = initial(Lqr.Yaw.sys_MIMO,   yawInitialState,   Lqr.Yaw.timeSample);
+
+Lqr.Roll.rotSample  = rollInitialState(1)  - Lqr.Roll.response(:, 1);
+Lqr.Pitch.rotSample = pitchInitialState(1) - Lqr.Pitch.response(:, 1);
+Lqr.Yaw.rotSample   = Lqr.Yaw.response(:, 1);
 end
 
 %% 4. Check the performance requirements
 
-function check_reqr(Stm, Lqr)
+function check_reqr(Stm, Reqr, Lqr)
 % CHECK_REQR  Check that the step responses meets the requirements.
 
-% Overshoot requirements
-if any(Lqr.Roll.response >= (1 + Stm.Roll.maxOvershoot))
-	warning("Too much overshoot for LQR in Roll");
-end
-if any(Lqr.Pitch.response >= (1 + Stm.Pitch.maxOvershoot))
-	warning("Too much overshoot for LQR in Roll");
-end
+% Load locally the requirements bounds
+Bounds = reqr_bounds(Stm, Reqr);
 
-% Settling time requirements
-%
-% It can be verified on the plotted graph.
-% TODO: implement that programatically
+if ~Bounds.Roll.check(Lqr.Roll.timeSample, Lqr.Roll.rotSample)
+	warning("Roll step response does not meet the performance requirements.");
+end
+if ~Bounds.Pitch.check(Lqr.Pitch.timeSample, Lqr.Pitch.rotSample)
+	warning("Pitch step response does not meet the performance requirements.");
+end
+if ~Bounds.Yaw.check(Lqr.Yaw.timeSample, Lqr.Yaw.rotSample)
+	warning("Yaw step response does not meet the performance requirements.");
+end
 end
 
 %% 5. Plot the step responses
 
-function plot_step_responses(Lqr)
-% PLOT_STEP_RESPONSES  Plot the step responses of the LQR controllers.
+function plot_responses(Stm, Reqr, Lqr)
+% PLOT_responses  Plot the rotation and voltage profiles of the LQR controllers.
+
+% Load locally the requirements bounds
+Bounds = reqr_bounds(Stm, Reqr);
 
 % Instantiate a new figure object
 figure("WindowStyle", "docked");
-title("Step responses of the LQR controllers");
+sgtitle("Rotation and voltage profiles of the LQR controllers");
 
 % Plot the step responses
-hold on;
-plot(Lqr.Roll.tSample,  (1 -  Lqr.Roll.response(:, 1)/Lqr.Roll.refVec(1)));
-plot(Lqr.Pitch.tSample, (1 - Lqr.Pitch.response(:, 1)/Lqr.Pitch.refVec(1)));
-plot(Lqr.Yaw.tSample,   (1 -   Lqr.Yaw.response(:, 1)/Lqr.Yaw.refVec(1)));
-hold off;
-grid;
+subplot(2, 3, 1); hold on;
+plot(Lqr.Roll.timeSample, rad2deg(Lqr.Roll.rotSample));
+plot(Bounds.Roll.Upper.time, rad2deg(Bounds.Roll.Upper.angle), 'LineWidth', 1, 'Color', 'r');
+plot(Bounds.Roll.Lower.time, rad2deg(Bounds.Roll.Lower.angle), 'LineWidth', 1, 'Color', 'r');
+hold off; grid;
+title("Roll");
 xlabel("Time (s)");
-ylabel("Normalized rotation angle");
-legend('Roll', 'Pitch', 'Yaw', 'location', 'southeast');
+ylabel("Angle (°)");
+
+subplot(2, 3, 2); hold on;
+plot(Lqr.Pitch.timeSample, rad2deg(Lqr.Pitch.rotSample));
+plot(Bounds.Pitch.Upper.time, rad2deg(Bounds.Pitch.Upper.angle), 'LineWidth', 1, 'Color', 'r');
+plot(Bounds.Pitch.Lower.time, rad2deg(Bounds.Pitch.Lower.angle), 'LineWidth', 1, 'Color', 'r');
+hold off; grid;
+title("Pitch");
+xlabel("Time (s)");
+ylabel("Angle (°)");
+
+subplot(2, 3, 3); hold on;
+plot(Lqr.Yaw.timeSample, rad2deg(Lqr.Yaw.rotSample));
+plot(Bounds.Yaw.Upper.time, rad2deg(Bounds.Yaw.Upper.angle), 'LineWidth', 1, 'Color', 'r');
+plot(Bounds.Yaw.Lower.time, rad2deg(Bounds.Yaw.Lower.angle), 'LineWidth', 1, 'Color', 'r');
+hold off; grid;
+title("Yaw");
+xlabel("Time (s)");
+ylabel("Angle (°)");
+
+% Plot the voltage inputs
+subplot(2, 3, 4); hold on;
+plot(Lqr.Roll.timeSample, Lqr.Roll.K * Lqr.Roll.response');
+hold off; grid;
+xlabel("Time (s)");
+ylabel("Voltage (V)");
+
+subplot(2, 3, 5); hold on;
+plot(Lqr.Pitch.timeSample, Lqr.Pitch.K * Lqr.Pitch.response');
+hold off; grid;
+xlabel("Time (s)");
+ylabel("Voltage (V)");
+
+subplot(2, 3, 6); hold on;
+plot(Lqr.Yaw.timeSample, Lqr.Yaw.K * Lqr.Yaw.response');
+hold off; grid;
+xlabel("Time (s)");
+ylabel("Voltage (V)");
 end

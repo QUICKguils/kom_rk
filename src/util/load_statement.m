@@ -38,9 +38,9 @@ Stm.Pitch.angle         = deg2rad(30);  % Pitch rotation angle [rad]
 Stm.Pitch.maxOvershoot  = 0.05;         % Maximum overshoot
 Stm.Pitch.settlingTime  = 2.5;          % Settling time [s]
 Stm.Pitch.settlingAngle = deg2rad(2);   % Settling error angle [rad]
-Stm.Yaw.recoveryTime    = 5;            % Laser hit recovery time [s]
 Stm.Yaw.laserTorque     = 4000;         % Torque induced by laser hit [N/m]
 Stm.Yaw.laserTime       = 0.5;          % Duration of laser hit [s]
+Stm.Yaw.settlingTime    = 5;            % Laser hit recovery time [s]
 Stm.Yaw.settlingRtol    = 0.05;         % Settling relative tolerance
 
 end

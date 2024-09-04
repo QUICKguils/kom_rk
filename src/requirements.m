@@ -82,7 +82,7 @@ HitDesc.angle = YawDesc.laserTorque/Izz * YawDesc.laserTime^2;
 HitEvo = evolution_from_rest(HitDesc, Izz);
 
 % Recovery phase: bring back yaw angle to 0 rad
-RecovDesc.settlingTime = YawDesc.recoveryTime - YawDesc.laserTime;
+RecovDesc.settlingTime = YawDesc.settlingTime - YawDesc.laserTime;
 RecovDesc.angle = -HitDesc.angle;
 RecovEvo = evolution_from_rest(RecovDesc, Izz);
 
