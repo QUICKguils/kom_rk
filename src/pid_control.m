@@ -3,27 +3,24 @@ function Pid = pid_control(RunArg, Stm, Reqr, SS)
 %
 % Arguments:
 %   RunArg (struct) -- Code execution parameters, with field:
-%     opts  (1xN char) -- Output options
-%       'p' -> Enable [P]lots creation
-%     selsim ({'roll', 'pitch', 'yaw'}) -- Select simulink model
-%       'roll'  -> Run the roll models
-%       'pitch' -> Run the pitch models
-%       'yaw'   -> Run the yaw models
-%   Stm    (struct) -- Project statement data
-%   Reqr   (struct) -- Requirements estimation
-%   SS     (struct) -- State-space representations
+%   opts (1xN char) -- Output options
+%     'p' -> Enable [P]lots creation
+%   selsim ({'roll', 'pitch', 'yaw'}) -- Select simulink model
+%     'roll'  -> Run the roll models
+%     'pitch' -> Run the pitch models
+%     'yaw'   -> Run the yaw models
+%   runsim (bool) -- Run the LQR and PID simulink models
+%     true  -> Run the selected simulink models.
+%     false -> Do not activate simulink.
+%   Stm (struct) -- Project statement data
+%   Reqr (struct) -- Requirements estimation
+%   SS (struct) -- State-space representations
 % Return:
-%   Pid.Roll, Pid.Pitch, Pid.Yaw (struct) -- PID controllers, with fields:
-%     P (array[double]) -- Proportional term of C(s).
-%     I (array[double]) -- Integral     term of C(s).
-%     D (array[double]) -- Derivative   term of C(s).
-
-% TODO:
-% - run selected simulink model by Runarg.selsim
-
-Pid.test = 0;
+%   Pid.Roll, Pid.Pitch, Pid.Yaw (struct) -- PID controllers data.
 
 % 1. Heuristics for P, I and D terms
+
+Pid = heuristic_PID();
 
 % 2. PID controller for the state-space systems
 
@@ -38,8 +35,26 @@ Pid.test = 0;
 % 5. Plot the step responses
 
 if contains(RunArg.opts, 'p')
-% 	plot_step_responses(Lqr);
+	plot_responses(Stm, Reqr, Pid);
 end
+
+% 6. Run the Simulink models
+
+if RunArg.runsim
+	% Make sure that the project data are loaded in the workspace
+	assignin("base", "RunArg", RunArg);
+	assignin("base", "Stm", Stm);
+	assignin("base", "Reqr", Reqr);
+	assignin("base", "SS", SS);
+	assignin("base", "Pid", Pid);
+
+	Pid = run_simulink_models(Pid);
+
+	if contains(RunArg.opts, 'p')
+		plot_rw_speeds(Pid);
+	end
+end
+
 end
 
 %% 1. Heuristics for P, I and D terms
@@ -104,31 +119,31 @@ function check_reqr(Stm, Reqr, Pid)
 Bounds = reqr_bounds(Stm, Reqr);
 
 if ~Bounds.Roll.check(Pid.Roll.tSample, Pid.Roll.response)
-	warning("Roll step response does not meet the performance requirements.");
+	warning("PID roll maneuver does not meet the performance requirements.");
 end
 if ~Bounds.Pitch.check(Pid.Pitch.tSample, Pid.Pitch.response)
-	warning("Pitch step response does not meet the performance requirements.");
+	warning("PID pitch maneuver does not meet the performance requirements.");
 end
 if ~Bounds.Yaw.check(Pid.Yaw.tSample, Pid.Yaw.response)
-	warning("Yaw step response does not meet the performance requirements.");
+	warning("PID yaw maneuver does not meet the performance requirements.");
 end
 end
 
 %% 5. Plot the step responses
 
-function plot_step_responses(Stm, Reqr, Lqr)
-% PLOT_STEP_RESPONSES  Plot the step responses of the LQR controllers.
+function plot_responses(Stm, Reqr, Pid)
+% PLOT_RESPONSES  Plot the rotation and voltage profiles of the PID controllers.
 
 % Load locally the requirements bounds
 Bounds = reqr_bounds(Stm, Reqr);
 
 % Instantiate a new figure object
 figure("WindowStyle", "docked");
-sgtitle("Step responses of the LQR controllers");
+sgtitle("Rotation and voltage profiles of the PID controllers");
 
 % Plot the step responses
-subplot(1, 3, 1); hold on;
-plot(Lqr.Roll.tSample, rad2deg(Lqr.Roll.response));
+subplot(2, 3, 1); hold on;
+plot(Pid.Roll.timeSample, rad2deg(Pid.Roll.rotAngle));
 plot(Bounds.Roll.Upper.time, rad2deg(Bounds.Roll.Upper.angle), 'LineWidth', 1, 'Color', 'r');
 plot(Bounds.Roll.Lower.time, rad2deg(Bounds.Roll.Lower.angle), 'LineWidth', 1, 'Color', 'r');
 hold off; grid;
@@ -136,8 +151,8 @@ title("Roll");
 xlabel("Time (s)");
 ylabel("Angle (°)");
 
-subplot(1, 3, 2); hold on;
-plot(Lqr.Pitch.tSample, rad2deg(Lqr.Pitch.response));
+subplot(2, 3, 2); hold on;
+plot(Pid.Pitch.timeSample, rad2deg(Pid.Pitch.rotAngle));
 plot(Bounds.Pitch.Upper.time, rad2deg(Bounds.Pitch.Upper.angle), 'LineWidth', 1, 'Color', 'r');
 plot(Bounds.Pitch.Lower.time, rad2deg(Bounds.Pitch.Lower.angle), 'LineWidth', 1, 'Color', 'r');
 hold off; grid;
@@ -145,12 +160,93 @@ title("Pitch");
 xlabel("Time (s)");
 ylabel("Angle (°)");
 
-subplot(1, 3, 3); hold on;
-plot(Lqr.Yaw.tSample, rad2deg(Lqr.Yaw.response));
+subplot(2, 3, 3); hold on;
+plot(Pid.Yaw.timeSample, rad2deg(Pid.Yaw.rotAngle));
 plot(Bounds.Yaw.Upper.time, rad2deg(Bounds.Yaw.Upper.angle), 'LineWidth', 1, 'Color', 'r');
 plot(Bounds.Yaw.Lower.time, rad2deg(Bounds.Yaw.Lower.angle), 'LineWidth', 1, 'Color', 'r');
 hold off; grid;
 title("Yaw");
 xlabel("Time (s)");
 ylabel("Angle (°)");
+
+% Plot the voltage inputs
+subplot(2, 3, 4); hold on;
+plot(Pid.Roll.timeSample, Pid.Roll.voltage);
+hold off; grid;
+xlabel("Time (s)");
+ylabel("Voltage (V)");
+
+subplot(2, 3, 5); hold on;
+plot(Pid.Pitch.timeSample, Pid.Pitch.voltage);
+hold off; grid;
+xlabel("Time (s)");
+ylabel("Voltage (V)");
+
+subplot(2, 3, 6); hold on;
+plot(Pid.Yaw.timeSample, Pid.Yaw.voltage);
+hold off; grid;
+xlabel("Time (s)");
+ylabel("Voltage (V)");
+end
+
+%% 6. Run the Simulink models
+
+function Pid = run_simulink_models(Pid)
+% RUN_SIMULINK_MODELS  Run simulink models and save scope data.
+
+	evalin('base','RunArg.selsim = ''roll'';');
+	outRoll = sim("src\slx\pid_control_model.slx");
+	Pid.Roll.SimulinkScopes.time     = outRoll.tout;
+	Pid.Roll.SimulinkScopes.voltage  = outRoll.voltage.signals.values;
+	Pid.Roll.SimulinkScopes.current  = outRoll.current.signals.values;
+	Pid.Roll.SimulinkScopes.rotAngle = outRoll.rotAngle.signals.values;
+	Pid.Roll.SimulinkScopes.rotRate  = outRoll.rotRate.signals.values;
+	Pid.Roll.SimulinkScopes.rwSpeed  = outRoll.rwSpeed.signals.values;
+
+	evalin('base','RunArg.selsim = ''pitch'';');
+	outPitch = sim("src\slx\pid_control_model.slx");
+	Pid.Pitch.SimulinkScopes.time     = outPitch.tout;
+	Pid.Pitch.SimulinkScopes.voltage  = outPitch.voltage.signals.values;
+	Pid.Pitch.SimulinkScopes.current  = outPitch.current.signals.values;
+	Pid.Pitch.SimulinkScopes.rotAngle = outPitch.rotAngle.signals.values;
+	Pid.Pitch.SimulinkScopes.rotRate  = outPitch.rotRate.signals.values;
+	Pid.Pitch.SimulinkScopes.rwSpeed  = outPitch.rwSpeed.signals.values;
+
+	evalin('base','RunArg.selsim = ''yaw'';');
+	outYaw = sim("src\slx\pid_control_model.slx");
+	Pid.Yaw.SimulinkScopes.time     = outYaw.tout;
+	Pid.Yaw.SimulinkScopes.voltage  = outYaw.voltage.signals.values;
+	Pid.Yaw.SimulinkScopes.current  = outYaw.current.signals.values;
+	Pid.Yaw.SimulinkScopes.rotAngle = outYaw.rotAngle.signals.values;
+	Pid.Yaw.SimulinkScopes.rotRate  = outYaw.rotRate.signals.values;
+	Pid.Yaw.SimulinkScopes.rwSpeed  = outYaw.rwSpeed.signals.values;
+end
+
+function plot_rw_speeds(Pid)
+% PLOT_RW_SPEEDS  Plot the RW speeds, obtained from the Simulink models.
+
+	% Instantiate a new figure object
+	figure("WindowStyle", "docked");
+	sgtitle("RW speeds (Simulink model for PID)");
+	
+	subplot(1, 3, 1);
+	plot(Pid.Roll.SimulinkScopes.time, Pid.Roll.SimulinkScopes.rwSpeed);
+	grid;
+	title("Roll");
+	xlabel("Time (s)");
+	ylabel("Speed (rpm)");
+	
+	subplot(1, 3, 2);
+	plot(Pid.Pitch.SimulinkScopes.time, Pid.Pitch.SimulinkScopes.rwSpeed);
+	grid;
+	title("Pitch");
+	xlabel("Time (s)");
+	ylabel("Speed (rpm)");
+	
+	subplot(1, 3, 3);
+	plot(Pid.Yaw.SimulinkScopes.time, Pid.Yaw.SimulinkScopes.rwSpeed);
+	grid;
+	title("Yaw");
+	xlabel("Time (s)");
+	ylabel("Speed (rpm)");
 end
