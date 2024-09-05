@@ -50,6 +50,15 @@ if contains(RunArg.opts, 'p')
 	plot_responses(Stm, Reqr, Lqr);
 end
 
+% 6. Run the Simulink models
+
+if RunArg.simulink
+	Lqr = run_simulink_models(Lqr);
+	if contains(RunArg.opts, 'p')
+		plot_rw_speeds(Lqr);
+	end
+end
+
 end
 
 %% 1. Heuristics for Q and R matrices
@@ -162,7 +171,7 @@ end
 %% 5. Plot the step responses
 
 function plot_responses(Stm, Reqr, Lqr)
-% PLOT_responses  Plot the rotation and voltage profiles of the LQR controllers.
+% PLOT_RESPONSES  Plot the rotation and voltage profiles of the LQR controllers.
 
 % Load locally the requirements bounds
 Bounds = reqr_bounds(Stm, Reqr);
@@ -217,4 +226,66 @@ plot(Lqr.Yaw.timeSample, Lqr.Yaw.voltage);
 hold off; grid;
 xlabel("Time (s)");
 ylabel("Voltage (V)");
+end
+
+%% 6. Run the Simulink models
+
+function Lqr = run_simulink_models(Lqr)
+% RUN_SIMULINK_MODELS  Run simulink models and save scope data.
+
+	evalin('base','RunArg.selsim = ''roll'';');
+	outRoll = sim("src\slx\lqr_control_model.slx");
+	Lqr.Roll.SimulinkScopes.time     = outRoll.tout;
+	Lqr.Roll.SimulinkScopes.voltage  = outRoll.voltage.signals.values;
+	Lqr.Roll.SimulinkScopes.current  = outRoll.current.signals.values;
+	Lqr.Roll.SimulinkScopes.rotAngle = outRoll.rotAngle.signals.values;
+	Lqr.Roll.SimulinkScopes.rotRate  = outRoll.rotRate.signals.values;
+	Lqr.Roll.SimulinkScopes.rwSpeed  = outRoll.rwSpeed.signals.values;
+
+	evalin('base','RunArg.selsim = ''pitch'';');
+	outPitch = sim("src\slx\lqr_control_model.slx");
+	Lqr.Pitch.SimulinkScopes.time     = outPitch.tout;
+	Lqr.Pitch.SimulinkScopes.voltage  = outPitch.voltage.signals.values;
+	Lqr.Pitch.SimulinkScopes.current  = outPitch.current.signals.values;
+	Lqr.Pitch.SimulinkScopes.rotAngle = outPitch.rotAngle.signals.values;
+	Lqr.Pitch.SimulinkScopes.rotRate  = outPitch.rotRate.signals.values;
+	Lqr.Pitch.SimulinkScopes.rwSpeed  = outPitch.rwSpeed.signals.values;
+
+	evalin('base','RunArg.selsim = ''yaw'';');
+	outYaw = sim("src\slx\lqr_control_model.slx");
+	Lqr.Yaw.SimulinkScopes.time     = outYaw.tout;
+	Lqr.Yaw.SimulinkScopes.voltage  = outYaw.voltage.signals.values;
+	Lqr.Yaw.SimulinkScopes.current  = outYaw.current.signals.values;
+	Lqr.Yaw.SimulinkScopes.rotAngle = outYaw.rotAngle.signals.values;
+	Lqr.Yaw.SimulinkScopes.rotRate  = outYaw.rotRate.signals.values;
+	Lqr.Yaw.SimulinkScopes.rwSpeed  = outYaw.rwSpeed.signals.values;
+end
+
+function plot_rw_speeds(Lqr)
+% PLOT_RW_SPEEDS  Plot the RW speeds, obtained from the Simulink models.
+
+	% Instantiate a new figure object
+	figure("WindowStyle", "docked");
+	sgtitle("RW speeds (Simulink model for LQR)");
+	
+	subplot(1, 3, 1);
+	plot(Lqr.Roll.SimulinkScopes.time, Lqr.Roll.SimulinkScopes.rwSpeed);
+	grid;
+	title("Roll");
+	xlabel("Time (s)");
+	ylabel("Speed (rpm)");
+	
+	subplot(1, 3, 2);
+	plot(Lqr.Pitch.SimulinkScopes.time, Lqr.Pitch.SimulinkScopes.rwSpeed);
+	grid;
+	title("Pitch");
+	xlabel("Time (s)");
+	ylabel("Speed (rpm)");
+	
+	subplot(1, 3, 3);
+	plot(Lqr.Yaw.SimulinkScopes.time, Lqr.Yaw.SimulinkScopes.rwSpeed);
+	grid;
+	title("Yaw");
+	xlabel("Time (s)");
+	ylabel("Speed (rpm)");
 end

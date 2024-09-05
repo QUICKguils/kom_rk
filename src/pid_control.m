@@ -10,6 +10,7 @@ function Pid = pid_control(RunArg, Stm, Reqr, SS)
 %       'pitch' -> Run the pitch models
 %       'yaw'   -> Run the yaw models
 %   Stm    (struct) -- Project statement data
+%   Reqr   (struct) -- Requirements estimation
 %   SS     (struct) -- State-space representations
 % Return:
 %   Pid.Roll, Pid.Pitch, Pid.Yaw (struct) -- PID controllers, with fields:
