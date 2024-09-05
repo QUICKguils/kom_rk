@@ -36,7 +36,7 @@ For example:
 ```matlab
 % Override some default code execution parameters
 RunArg.opts   = 's';   % Only save the computed data, don't plot them
-RunArg.selsim = 'yaw'  % Run the simulink models for the yaw
+RunArg.runsim = true;  % Run the simulink models
 
 % Launch the main function
 main(RunArg);

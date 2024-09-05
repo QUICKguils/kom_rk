@@ -3,28 +3,20 @@ function Lqr = lqr_control(RunArg, Stm, Reqr, SS)
 %
 % Arguments:
 %   RunArg (struct) -- Code execution parameters, with field:
-%     opts  (1xN char) -- Output options
-%       'p' -> Enable [P]lots creation
-%     selsim ({'roll', 'pitch', 'yaw'}) -- Select simulink model
-%       'roll'  -> Run the roll models
-%       'pitch' -> Run the pitch models
-%       'yaw'   -> Run the yaw models
-%   Stm    (struct) -- Project statement data
-%   Reqr   (struct) -- Requirements estimation
-%   SS     (struct) -- State-space representations
+%   opts (1xN char) -- Output options
+%     'p' -> Enable [P]lots creation
+%   selsim ({'roll', 'pitch', 'yaw'}) -- Select simulink model
+%     'roll'  -> Run the roll models
+%     'pitch' -> Run the pitch models
+%     'yaw'   -> Run the yaw models
+%   runsim (bool) -- Run the LQR and PID simulink models
+%     true  -> Run the selected simulink models.
+%     false -> Do not activate simulink.
+%   Stm (struct) -- Project statement data
+%   Reqr (struct) -- Requirements estimation
+%   SS (struct) -- State-space representations
 % Return:
-%   Lqr.Roll, Lqr.Pitch, Lqr.Yaw (struct) -- LQR controllers, with fields:
-%     Q        (2x2 double) -- weight on the state vector
-%     R        (double)     -- weight on the input vector
-%     K        (1x2 double) -- optimal proportional gain
-%     A_cl     (2x2 double) -- closed loop A matrix
-%     sys      (2x1 ss)     -- proportional gain, closed loop system
-%     refVec   (2x1 double) -- initial conditions of the system
-%     tSample  (1xN double) -- time sample for the step response
-%     response (1xN double) -- system response to a step
-
-% TODO:
-% - run selected simulink model by Runarg.selsim
+%   Lqr.Roll, Lqr.Pitch, Lqr.Yaw (struct) -- LQR controllers data.
 
 % 1. Heuristics for Q and R matrices
 
@@ -52,8 +44,16 @@ end
 
 % 6. Run the Simulink models
 
-if RunArg.simulink
+if RunArg.runsim
+	% Make sure that the project data are loaded in the workspace
+	assignin("base", "RunArg", RunArg);
+	assignin("base", "Stm", Stm);
+	assignin("base", "Reqr", Reqr);
+	assignin("base", "SS", SS);
+	assignin("base", "Lqr", Lqr);
+
 	Lqr = run_simulink_models(Lqr);
+
 	if contains(RunArg.opts, 'p')
 		plot_rw_speeds(Lqr);
 	end
@@ -158,13 +158,13 @@ function check_reqr(Stm, Reqr, Lqr)
 Bounds = reqr_bounds(Stm, Reqr);
 
 if ~Bounds.Roll.check(Lqr.Roll.timeSample, Lqr.Roll.rotAngle)
-	warning("Roll step response does not meet the performance requirements.");
+	warning("LQR roll maneuver does not meet the performance requirements.");
 end
 if ~Bounds.Pitch.check(Lqr.Pitch.timeSample, Lqr.Pitch.rotAngle)
-	warning("Pitch step response does not meet the performance requirements.");
+	warning("LQR pitch maneuver does not meet the performance requirements.");
 end
 if ~Bounds.Yaw.check(Lqr.Yaw.timeSample, Lqr.Yaw.rotAngle)
-	warning("Yaw step response does not meet the performance requirements.");
+	warning("LQR yaw maneuver does not meet the performance requirements.");
 end
 end
 

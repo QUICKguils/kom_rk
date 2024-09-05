@@ -3,9 +3,9 @@ function Reqr = requirements(RunArg, Stm)
 %
 % Arguments:
 %   RunArg (struct) -- Code execution parameters, with fields:
-%     opts  (1xN char) -- Output options
+%     opts (1xN char) -- Output options
 %       'p' -> Enable [P]lots creation
-%   Stm    (struct) -- Project statement data
+%   Stm (struct) -- Project statement data
 % Return:
 %   Reqr (struct) -- Requirements estimation, with fields:
 %     RollEvo  (struct) -- Evolution of attitude and RW currents in roll

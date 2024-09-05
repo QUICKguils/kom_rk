@@ -5,10 +5,13 @@ function main(RunArg)
 %   opts (1xN char) -- Output options
 %     'p' -> Enable [P]lots creation
 %     's' -> [S]ave generated data
-%  selsim ({'roll', 'pitch', 'yaw'}) -- Select simulink model
-%    'roll'  -> Run the roll models
-%    'pitch' -> Run the pitch models
-%    'yaw'   -> Run the yaw models
+%   selsim ({'roll', 'pitch', 'yaw'}) -- Select simulink model
+%     'roll'  -> Run the roll models
+%     'pitch' -> Run the pitch models
+%     'yaw'   -> Run the yaw models
+%   runsim (bool) -- Run the LQR and PID simulink models
+%     true  -> Run the selected simulink models.
+%     false -> Do not activate simulink.
 %
 % The default values used to run this function are stored in
 % util/load_defaults.m

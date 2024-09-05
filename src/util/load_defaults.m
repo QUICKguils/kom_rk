@@ -6,15 +6,15 @@ function Default = load_defaults
 %   's' -> [S]ave generated data
 Default.opts = 'ps';
 
-% Activate the simulink models
-%   true  -> Run the simulink simulations.
-%   false -> Don't run the simulink simulations.
-Default.simulink = true;
-
-% Select the LQR and PID simulink model to run
-%   'roll'  -> Run the roll models
-%   'pitch' -> Run the pitch models
-%   'yaw'   -> Run the yaw models
+% Select the LQR and PID simulink models to run
+%   'roll'  -> Select the roll models
+%   'pitch' -> Select the pitch models
+%   'yaw'   -> Select the yaw models
 Default.selsim = 'roll';
+
+% Run the LQR and PID simulink models
+%   true  -> Run the selected simulink models.
+%   false -> Do not activate simulink.
+Default.runsim = true;
 
 end
